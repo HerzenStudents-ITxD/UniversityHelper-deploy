@@ -1,0 +1,112 @@
+version: '3.4'
+
+services:
+#  testsqlclient:
+#    container_name: sql-client
+#    image: mcr.microsoft.com/mssql-tools
+#    command: /bin/bash -c '/opt/mssql-tools/bin/sqlcmd -S sqlserver_db -U SA -P User_1234 -d master -Q "SELECT @@VERSION"'
+#    networks:
+#      - default
+#    depends_on:
+#      - sqlserver_db
+      
+  sqlserver_db:
+    container_name: sqlserver_db
+    image: mcr.microsoft.com/mssql/server:2017-latest
+    restart: always
+    environment:
+      ACCEPT_EULA: "Y"
+      SA_PASSWORD: "User_1234"
+    ports:
+      - 1433:1433
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "$$SA_PASSWORD" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - default
+
+  nginx-proxy:
+#    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
+    ports:
+      - 80:80
+      - 443:443
+#    volumes:
+#      - /var/run/docker.sock:/tmp/docker.sock:ro
+#      - certificates:/etc/certificates
+    networks:
+      - default
+
+  rabbitmq: # login guest:guest
+#    image: rabbitmq:3-management
+    hostname: "rabbitmq"
+    labels:
+      NAME: "rabbitmq"
+    build:
+      context: ./rabbitmq
+      dockerfile: Dockerfile
+    ports:
+    - "4369:4369"
+    - "5671:5671"
+    - "5672:5672"
+    - "25672:25672"
+    - "15671:15671"
+    - "15672:15672"
+    healthcheck:
+      test: rabbitmq-diagnostics -q ping
+      interval: 10s
+      timeout: 10s
+      retries: 3
+#    healthcheck:
+#        test: ["CMD", "curl", "-f", "http://localhost:15672"]
+#        interval: 30s
+#        timeout: 10s
+#        retries: 5
+    networks:
+      - default
+
+  userservice:
+    image: userservice
+    container_name: userservice
+    depends_on:
+      - nginx-proxy
+      - rabbitmq
+      - sqlserver_db
+#    build:
+#      context: C:\Users\user\Documents\GitHub\herzen-helper\UniversityHelper-UserService
+#      dockerfile: Dockerfile
+    environment:
+      - VIRTUAL_HOST=sub.domain-example.com
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+    ports:
+      - 51736:80
+      - 44344:443
+#    volumes:
+#      - storage:/storage
+#      - /var/run/docker.sock:/tmp/docker.sock:ro
+#      - certificates:/etc/certificates
+#      - ~/.aspnet/https:/root/.aspnet/https:ro
+#      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+    networks:
+      - default
+
+#volumes:
+#  storage:
+#  certificates:
+
+networks:
+  default:
+    name: nginx-proxy
+
+#secrets:
+#  server.cert:
+#    file: ./server.cert
+#  server.key:
+#    file: ./server.key
