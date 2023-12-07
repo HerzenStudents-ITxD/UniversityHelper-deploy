@@ -36,6 +36,8 @@ services:
       dockerfile: Dockerfile
     ports:
       - 80:80
+      - 81:81
+      - 82:82
       - 443:443
 #    volumes:
 #      - /var/run/docker.sock:/tmp/docker.sock:ro
@@ -72,28 +74,68 @@ services:
       - default
 
   userservice:
-    image: userservice
+#    image: userservice
     container_name: userservice
     depends_on:
       - nginx-proxy
       - rabbitmq
       - sqlserver_db
-#    build:
-#      context: C:\Users\user\Documents\GitHub\herzen-helper\UniversityHelper-UserService
-#      dockerfile: Dockerfile
+    build:
+      context: ../UniversityHelper-UserService
+      dockerfile: Dockerfile
     environment:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
     ports:
       - 51736:80
-      - 44344:443
+#      - 44344:443
 #    volumes:
 #      - storage:/storage
 #      - /var/run/docker.sock:/tmp/docker.sock:ro
 #      - certificates:/etc/certificates
 #      - ~/.aspnet/https:/root/.aspnet/https:ro
 #      - ~/.microsoft/usersecrets:/root/.microsoft/usersecrets:ro
+    networks:
+      - default
+
+  rightsservice:
+#    image: rightsservice
+    container_name: rightsservice
+    depends_on:
+      - nginx-proxy
+      - rabbitmq
+      - sqlserver_db
+    build:
+      context: ../UniversityHelper-RightsService
+      dockerfile: Dockerfile
+    environment:
+      - VIRTUAL_HOST=sub.domain-example.com
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+    ports:
+      - 51737:80
+      - 44345:443
+    networks:
+      - default
+
+  authservice:
+#    image: authservice
+    container_name: authservice
+    depends_on:
+      - nginx-proxy
+      - rabbitmq
+      - sqlserver_db
+    build:
+      context: ../UniversityHelper-AuthService
+      dockerfile: Dockerfile
+    environment:
+      - VIRTUAL_HOST=sub.domain-example.com
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+    ports:
+      - 51738:80
+      - 44346:443
     networks:
       - default
 
