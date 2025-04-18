@@ -1,18 +1,18 @@
 {
     "rabbit_version": "3.6.6",
     "users": [
-     {
-      "name": "UserService_CBE144F5-AD53-4D0D-B6A1-39133E3F7D2D",
-      "password_hash": "BXT0GJHXXhvTCRSi8b0sQuS26qQDh3s29r+nu8Cy0LKAPlcY",
-      "hashing_algorithm": "rabbit_password_hashing_sha256",
-      "tags": ""
-     },
-     {
-      "name": "UserService_CBE144F5-0000-0000-0000-39133E3F7D2D",
-      "password_hash": "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4",
-      "hashing_algorithm": "rabbit_password_hashing_sha256",
-      "tags": ""
-     }
+        {
+            "name": "UserService_CBE144F5-AD53-4D0D-B6A1-39133E3F7D2D",
+            "password_hash": "BXT0GJHXXhvTCRSi8b0sQuS26qQDh3s29r+nu8Cy0LKAPlcY",
+            "hashing_algorithm": "rabbit_password_hashing_sha256",
+            "tags": ""
+        },
+        {
+            "name": "RightsService_8C8001A7-8424-4A73-8D80-14049760ACFE",
+            "password_hash": "BXT0GJHXXhvTCRSi8b0sQuS26qQDh3s29r+nu8Cy0LKAPlcY",
+            "hashing_algorithm": "rabbit_password_hashing_sha256",
+            "tags": ""
+        }
     ],
     "vhosts": [
         {
@@ -21,11 +21,18 @@
     ],
     "permissions": [
         {
-        "user": "UserService_CBE144F5-AD53-4D0D-B6A1-39133E3F7D2D",
-        "vhost": "\/",
-        "configure": ".*",
-        "write": ".*",
-        "read": ".*"
+            "user": "UserService_CBE144F5-AD53-4D0D-B6A1-39133E3F7D2D",
+            "vhost": "\/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
+        },
+        {
+            "user": "RightsService_8C8001A7-8424-4A73-8D80-14049760ACFE",
+            "vhost": "\/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
         }
     ],
     "parameters": [],
