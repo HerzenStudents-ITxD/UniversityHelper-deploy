@@ -28,23 +28,6 @@ services:
     networks:
       - default
 
-  nginx-proxy:
-#    image: jwilder/nginx-proxy
-    container_name: nginx-proxy
-    build:
-      context: ./nginx
-      dockerfile: Dockerfile
-    ports:
-      - 80:80
-      - 81:81
-      - 82:82
-      - 443:443
-#    volumes:
-#      - /var/run/docker.sock:/tmp/docker.sock:ro
-#      - certificates:/etc/certificates
-    networks:
-      - default
-
   rabbitmq: # login guest:guest
 #    image: rabbitmq:3-management
     hostname: "rabbitmq"
@@ -54,7 +37,7 @@ services:
       context: ./rabbitmq
       dockerfile: Dockerfile
     ports:
-    - "4369:4369"
+    - "4370:4369"
     - "5671:5671"
     - "5672:5672"
     - "25672:25672"
@@ -62,8 +45,8 @@ services:
     - "15672:15672"
     healthcheck:
       test: rabbitmq-diagnostics -q ping
-      interval: 10s
-      timeout: 10s
+      interval: 30s
+      timeout: 30s
       retries: 3
 #    healthcheck:
 #        test: ["CMD", "curl", "-f", "http://localhost:15672"]
@@ -73,11 +56,28 @@ services:
     networks:
       - default
 
+  redis:
+    labels:
+      NAME: "redis"
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    # ports:
+    #   - "6380:6379"
+    # volumes:
+    #   - ./redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "-a", "$REDIS_PASSWORD", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+    networks:
+      - default
+
   userservice:
 #    image: userservice
     container_name: userservice
     depends_on:
-      - nginx-proxy
       - rabbitmq
       - sqlserver_db
     build:
@@ -87,8 +87,9 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
-    ports:
-      - 51736:80
+      - RabbitMQ_Password=1234
+    # ports:
+    #   - 51736:80
 #      - 44344:443
 #    volumes:
 #      - storage:/storage
@@ -103,7 +104,6 @@ services:
 #    image: rightsservice
     container_name: rightsservice
     depends_on:
-      - nginx-proxy
       - rabbitmq
       - sqlserver_db
     build:
@@ -113,9 +113,9 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
-    ports:
-      - 51737:80
-      - 44345:443
+    # ports:
+    #   - 51737:80
+    #   - 44345:443
     networks:
       - default
 
@@ -123,9 +123,10 @@ services:
 #    image: authservice
     container_name: authservice
     depends_on:
-      - nginx-proxy
       - rabbitmq
       - sqlserver_db
+      - userservice
+      - rightsservice
     build:
       context: ../UniversityHelper-AuthService
       dockerfile: Dockerfile
@@ -133,9 +134,28 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
+    # ports:
+    #   - 51738:80
+    #   - 44346:443
+    networks:
+      - default
+
+  nginx-proxy:
+#    image: jwilder/nginx-proxy
+    container_name: nginx-proxy
+    depends_on:
+      - authservice
+    build:
+      context: ./nginx
+      dockerfile: Dockerfile
     ports:
-      - 51738:80
-      - 44346:443
+      - 80:80
+      - 81:81
+      - 82:82
+      - 443:443
+#    volumes:
+#      - /var/run/docker.sock:/tmp/docker.sock:ro
+#      - certificates:/etc/certificates
     networks:
       - default
 
