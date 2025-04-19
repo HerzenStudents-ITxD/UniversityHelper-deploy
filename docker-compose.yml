@@ -141,11 +141,32 @@ services:
     networks:
       - default
 
+  communityservice:
+#    image: rightsservice
+    container_name: communityservice
+    depends_on:
+      - rabbitmq
+      - sqlserver_db
+    build:
+      context: ../UniversityHelper-CommunityService
+      dockerfile: Dockerfile
+    environment:
+      - VIRTUAL_HOST=sub.domain-example.com
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Password=1234
+    # ports:
+    #   - 51737:80
+    #   - 44345:443
+    networks:
+      - default
+
   nginx-proxy:
 #    image: jwilder/nginx-proxy
     container_name: nginx-proxy
     depends_on:
       - authservice
+      - communityservice
     build:
       context: ./nginx
       dockerfile: Dockerfile
@@ -153,6 +174,7 @@ services:
       - 80:80
       - 81:81
       - 82:82
+      - 83:83
       - 443:443
 #    volumes:
 #      - /var/run/docker.sock:/tmp/docker.sock:ro

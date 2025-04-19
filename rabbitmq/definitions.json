@@ -12,6 +12,12 @@
             "password_hash": "BXT0GJHXXhvTCRSi8b0sQuS26qQDh3s29r+nu8Cy0LKAPlcY",
             "hashing_algorithm": "rabbit_password_hashing_sha256",
             "tags": ""
+        },
+        {
+            "name": "CommunityService_B322D740-6DBD-40C8-9B93-3F254AE0422A",
+            "password_hash": "BXT0GJHXXhvTCRSi8b0sQuS26qQDh3s29r+nu8Cy0LKAPlcY",
+            "hashing_algorithm": "rabbit_password_hashing_sha256",
+            "tags": ""
         }
     ],
     "vhosts": [
@@ -29,6 +35,13 @@
         },
         {
             "user": "RightsService_8C8001A7-8424-4A73-8D80-14049760ACFE",
+            "vhost": "\/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
+        },
+        {
+            "user": "CommunityService_B322D740-6DBD-40C8-9B93-3F254AE0422A",
             "vhost": "\/",
             "configure": ".*",
             "write": ".*",
