@@ -9,8 +9,18 @@ set PASSWORD=Admin_1234
 set SALT=Random_Salt
 set USER_ID=11111111-1111-1111-1111-111111111111
 
-:: Генерация base64-хеша (требуется установленный openssl)
-for /f "tokens=*" %%i in ('echo|set /p="!LOGIN!!SALT!!PASSWORD!" ^| openssl dgst -sha512 -binary ^| openssl base64') do set HASH=%%i
+:: Создать временный файл со строкой для хеширования
+echo %LOGIN%%SALT%%PASSWORD%> input.txt
+
+:: Хешировать и получить base64-хеш (требуется openssl)
+openssl dgst -sha512 -binary input.txt | openssl base64 > hash.txt
+
+:: Прочитать хеш из файла
+set /p HASH=<hash.txt
+
+:: Удалить временные файлы
+del input.txt
+del hash.txt
 
 echo Сгенерирован хеш: %HASH%
 
