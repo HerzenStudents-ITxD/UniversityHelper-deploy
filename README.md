@@ -1,1 +1,38 @@
-# deploy
+❗️ИНСТРУКЦИЯ как не скачивать всё нужное для бэкенда, но пользоваться им (пока у нас нет Linux-сервера) 
+
+Скачиваете Docker Desktop, клонируете UniversityHelper-deploy на компьютер и все нужные сервисы:
+AuthService,
+RightsService, 
+UserService
+CommunityService (пока что эти, сообщение будет обновляться)
+
+TimetableService, 
+MapService, 
+(в прогрессе поддержки, пока они ничего не умеют)
+
+Переходите терминалом в папку UniversityHelper-deploy и пишите команду
+docker compose up -d
+Эта команда создает образы если их нет и запускает по ним контейнеры
+В первый раз будет долго (у меня ушло 500 секунд), следующие разы быстрее
+Чтобы удалить контейнеры команда 
+docker compose down
+
+После этого можете пользоваться нашими сервисами. 
+UserService:
+http://127.0.0.1:80/swagger/index.html
+RightService:
+http://127.0.0.1:81/swagger/index.html
+AuthService:
+http://127.0.0.1:82/swagger/index.html
+CommunityService:
+http://127.0.0.1:83/swagger/index.html
+
+
+127.0.0.1 = localhost, просто так в тг ссылка работает как ссылка
+
+Если хотите чтобы какие-то ручки не требовали авторизаци -- прописываете их в конце файла appsettings.json
+
+❗️ИНСТРУКЦИЯ как завести админа для логина 
+На Linux: bash install_admin_linux.sh
+На MacOs: bash install_admin_macos.sh
+На Windows: install_admin_windows.bat
