@@ -17,6 +17,9 @@ echo Сгенерирован хеш: %HASH%
 :: Подставляем хеш в шаблон
 powershell -Command "(Get-Content ./sql/02_create_admin_credentials_template.sql) -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content ./sql/02_create_admin_credentials.sql"
 
+echo Финальный SQL:
+type sql\02_create_admin_credentials.sql
+
 echo Копируем SQL-скрипты в контейнер...
 docker cp sql/01_create_admin_user.sql %CONTAINER%:/tmp/
 docker cp sql/02_create_admin_credentials.sql %CONTAINER%:/tmp/
