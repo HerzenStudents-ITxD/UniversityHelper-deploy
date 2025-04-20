@@ -9,18 +9,8 @@ set PASSWORD=Admin_1234
 set SALT=Random_Salt
 set USER_ID=11111111-1111-1111-1111-111111111111
 
-:: Создать временный файл со строкой для хеширования
-echo %LOGIN%%SALT%%PASSWORD%> input.txt
-
-:: Хешировать и получить base64-хеш (требуется openssl)
-openssl dgst -sha512 -binary input.txt | openssl base64 > hash.txt
-
-:: Прочитать хеш из файла
-set /p HASH=<hash.txt
-
-:: Удалить временные файлы
-del input.txt
-del hash.txt
+:: Генерация base64-хеша средствами PowerShell
+for /f "usebackq delims=" %%i in (`powershell -Command "$Text = '%LOGIN%%SALT%%PASSWORD%'; $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Text); $Hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash($Bytes); [Convert]::ToBase64String($Hash)"`) do set HASH=%%i
 
 echo Сгенерирован хеш: %HASH%
 
