@@ -39,10 +39,13 @@ http://127.0.0.1:83/swagger/index.html
 На MacOs: bash install_admin_macos.sh
 На Windows: install_admin_windows.bat
 
+Если из консоли в VS Code то команда будет выглядеть так: .\install_admin_windows.bat
+
 ## Вариант 2 (автоматический)
 Чтобы использовать эти скрипты:
 В Windows:
-Просто дважды щелкните на start.bat
+Просто дважды щелкните на start.bat 
+(не работает судя по всему)
 
 В macOS/Linux:
 - Откройте терминал
