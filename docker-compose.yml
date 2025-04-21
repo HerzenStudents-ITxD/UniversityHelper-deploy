@@ -135,6 +135,7 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Password=1234
     # ports:
     #   - 51738:80
     #   - 44346:443
