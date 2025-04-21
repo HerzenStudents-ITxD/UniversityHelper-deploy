@@ -6,7 +6,7 @@ echo 'NODENAME=rabbit@localhost' > /etc/rabbitmq/rabbitmq-env.conf
 
 (rabbitmqctl wait --timeout 60 $RABBITMQ_PID_FILE
 
-for i in "UniversityHelper.UserService","1234" UniversityHelper.RightsService","1234" "UniversityHelper.CommunityService","1234" "UniversityHelper.AuthService","1234"; do 
+for i in "UniversityHelper.UserService","1234" "UniversityHelper.RightsService","1234" "UniversityHelper.CommunityService","1234" "UniversityHelper.AuthService","1234"; do 
     IFS=","; 
     set -- $i; 
     # echo $1 and $2; 
