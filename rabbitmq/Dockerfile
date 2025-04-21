@@ -2,9 +2,15 @@ FROM rabbitmq:3-management
 RUN apt-get update
 RUN apt-get install -y curl 
 
-COPY rabbitmq.config /etc/rabbitmq/
-COPY definitions.json /etc/rabbitmq/
-COPY init.sh /init.sh
+# Create directory for RabbitMQ config
+RUN mkdir -p /etc/rabbitmq
+
+# Copy configuration files
+COPY ./rabbitmq.config /etc/rabbitmq/rabbitmq.config
+COPY ./definitions.json /etc/rabbitmq/definitions.json
+COPY ./init.sh /init.sh
+
+# Set permissions
 RUN chown rabbitmq:rabbitmq /etc/rabbitmq/rabbitmq.config /etc/rabbitmq/definitions.json
 RUN chmod +x /init.sh
  
