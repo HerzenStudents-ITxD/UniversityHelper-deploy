@@ -45,8 +45,12 @@ services:
       - RABBITMQ_DEFAULT_PASS=guest
       - RABBITMQ_NODENAME=rabbit@rabbitmq
     ports:
-      - "5672:5672"  # AMQP
-      - "15672:15672" # Management UI
+      - "4370:4369"
+      - "5671:5671"
+      - "5672:5672"
+      - "25672:25672"
+      - "15671:15671"
+      - "15672:15672"
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 30s
