@@ -29,7 +29,9 @@ services:
     networks:
       - default
 
-  rabbitmq: # login guest:guest
+  rabbitmq:
+    platform: linux/amd64
+   # login guest:guest
 #    image: rabbitmq:3-management
     hostname: "rabbitmq"
     container_name: rabbitmq
@@ -59,6 +61,7 @@ services:
       - default
 
   redis:
+    platform: linux/amd64
     labels:
       NAME: "redis"
     build:
@@ -77,6 +80,7 @@ services:
       - default
 
   userservice:
+    platform: linux/amd64
 #    image: userservice
     container_name: userservice
     depends_on:
@@ -106,6 +110,7 @@ services:
       - default
 
   rightsservice:
+    platform: linux/amd64
 #    image: rightsservice
     container_name: rightsservice
     depends_on:
@@ -128,6 +133,7 @@ services:
       - default
 
   authservice:
+    platform: linux/amd64
 #    image: authservice
     container_name: authservice
     depends_on:
@@ -153,6 +159,7 @@ services:
       - default
 
   communityservice:
+    platform: linux/amd64
 #    image: rightsservice
     container_name: communityservice
     depends_on:
@@ -176,6 +183,7 @@ services:
       - default
 
   nginx-proxy:
+    platform: linux/amd64
 #    image: jwilder/nginx-proxy
     container_name: nginx-proxy
     depends_on:
