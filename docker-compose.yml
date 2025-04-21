@@ -87,6 +87,9 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Host=rabbitmq
+      - RabbitMQ_VirtualHost=/
+      - RabbitMQ_Username=UniversityHelper.UserService
       - RabbitMQ_Password=1234
     # ports:
     #   - 51736:80
@@ -113,8 +116,10 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Host=rabbitmq
+      - RabbitMQ_VirtualHost=/
+      - RabbitMQ_Username=UniversityHelper.RightsService
       - RabbitMQ_Password=1234
-    # ports:
     #   - 51737:80
     #   - 44345:443
     networks:
@@ -135,6 +140,9 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Host=rabbitmq
+      - RabbitMQ_VirtualHost=/
+      - RabbitMQ_Username=UniversityHelper.AuthService
       - RabbitMQ_Password=1234
     # ports:
     #   - 51738:80
@@ -155,6 +163,9 @@ services:
       - VIRTUAL_HOST=sub.domain-example.com
       - ASPNETCORE_ENVIRONMENT=Production
       - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Host=rabbitmq
+      - RabbitMQ_VirtualHost=/
+      - RabbitMQ_Username=UniversityHelper.CommunityService
       - RabbitMQ_Password=1234
     # ports:
     #   - 51737:80
