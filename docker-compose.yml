@@ -36,13 +36,13 @@ services:
     build:
       context: ./rabbitmq
       dockerfile: Dockerfile
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_NODENAME=rabbit@rabbitmq
     ports:
-    - "4370:4369"
-    - "5671:5671"
-    - "5672:5672"
-    - "25672:25672"
-    - "15671:15671"
-    - "15672:15672"
+      - "5672:5672"  # AMQP
+      - "15672:15672" # Management UI
     healthcheck:
       test: rabbitmq-diagnostics -q ping
       interval: 30s

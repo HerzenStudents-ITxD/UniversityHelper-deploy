@@ -7,9 +7,10 @@ LOGIN="adminlogin"
 PASSWORD="Admin_1234"
 SALT="Random_Salt"
 USER_ID="11111111-1111-1111-1111-111111111111"
+INTERNAL_SALT="UniversityHelper.SALT3"
 
 # Генерация base64-хеша (MacOS: shasum вместо sha512sum)
-HASH=$(echo -n "$LOGIN$SALT$PASSWORD" | shasum -a 512 | awk '{print $1}' | xxd -r -p | base64)
+HASH=$(echo -n "$SALT$LOGIN$PASSWORD$INTERNAL_SALT" | shasum -a 512 | awk '{print $1}' | xxd -r -p | base64)
 
 echo "Сгенерирован хеш: $HASH"
 
