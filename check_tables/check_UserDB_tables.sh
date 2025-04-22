@@ -1,17 +1,24 @@
 #!/bin/bash
 
-# Параметры
-USER="SA"
-PASSWORD="User_1234"
+USER_DB_PASSWORD="User_1234"
 CONTAINER="sqlserver_db"
 DATABASE="UserDB"
 
-# Получаем список таблиц
-TABLES=$(docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U $USER -P $PASSWORD -d $DATABASE -Q "SELECT TABLE_SCHEMA + '.' + TABLE_NAME FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_TYPE = 'BASE TABLE'" -h-1)
+echo "Checking UserDB tables..."
 
-# Для каждой таблицы выводим данные
-for TABLE in $TABLES; do
-  echo "Таблица: $TABLE"
-  docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U $USER -P $PASSWORD -d $DATABASE -Q "SELECT * FROM $TABLE"
-  echo "------------------------"
-done
+echo "Users:"
+docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM Users"
+
+echo "UserCredentials:"
+docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM UserCredentials"
+
+echo "UserAvatars:"
+docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM UserAvatars"
+
+echo "UserProfiles:"
+docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM UserProfiles"
+
+echo "UserSettings:"
+docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM UserSettings"
+
+echo "Done ✅"
