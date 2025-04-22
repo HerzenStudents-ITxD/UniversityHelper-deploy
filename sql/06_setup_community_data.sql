@@ -9,14 +9,12 @@ DECLARE @AdminPostId UNIQUEIDENTIFIER = '77777777-7777-7777-7777-777777777777';
 DECLARE @AdminLocationId UNIQUEIDENTIFIER = '88888888-8888-8888-8888-888888888888';
 
 -- Create admin community
-INSERT INTO Communities (Id, Name, Description, CreatedBy, CreatedAtUtc, IsActive)
+INSERT INTO Communities (Id, Name, CreatedBy, CreatedAtUtc)
 VALUES (
     @AdminCommunityId,
     'University Administration',
-    'Official community of university administration',
     @AdminUserId,
-    @Now,
-    1
+    @Now
 );
 
 -- Add community avatar
@@ -46,7 +44,6 @@ INSERT INTO Posts (
     Content,
     CreatedBy,
     CreatedAtUtc,
-    IsActive,
     HasParticipants,
     HasLocation
 )
@@ -57,7 +54,6 @@ VALUES (
     'Welcome to our new platform! This is the official announcement from the university administration. We are excited to introduce new features for better communication and organization.',
     @AdminUserId,
     @Now,
-    1,
     1,
     1
 );
