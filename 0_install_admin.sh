@@ -9,29 +9,28 @@ SALT="Random_Salt"
 USER_ID="11111111-1111-1111-1111-111111111111"
 INTERNAL_SALT="UniversityHelper.SALT3"
 
-# Генерация base64-хеша (MacOS: shasum вместо sha512sum)
-HASH=$(echo -n "$SALT$LOGIN$PASSWORD$INTERNAL_SALT" | shasum -a 512 | awk '{print $1}' | xxd -r -p | base64)
+echo "Generating hash..."
+HASH=$(echo -n "${SALT}${LOGIN}${PASSWORD}${INTERNAL_SALT}" | openssl dgst -sha512 -binary | base64)
+echo "Generated hash: $HASH"
 
-echo "Сгенерирован хеш: $HASH"
+echo "Substituting hash into final SQL..."
+sed "s/СЮДА_ТВОЙ_BASE64_ХЕШ/$HASH/g" ./sql/02_create_admin_credentials_template.sql > ./sql/02_create_admin_credentials.sql
 
-# Подстановка хеша в итоговый SQL
-sed "s|СЮДА_ТВОЙ_BASE64_ХЕШ|$HASH|g" ./sql/02_create_admin_credentials_template.sql > ./sql/02_create_admin_credentials.sql
-
-echo "Финальный SQL:"
+echo "Final SQL:"
 cat ./sql/02_create_admin_credentials.sql
 
-echo "Копируем SQL-скрипты в контейнер..."
+echo "Copying SQL scripts to container..."
 docker cp ./sql/01_create_admin_user.sql $CONTAINER:/tmp/
 docker cp ./sql/02_create_admin_credentials.sql $CONTAINER:/tmp/
-docker cp ./sql/03_check_users.sql $CONTAINER:/tmp/
 
-echo "Создаём админ-пользователя..."
+echo "Creating admin user..."
 docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -i /tmp/01_create_admin_user.sql
 
-echo "Создаём учётные данные админа..."
+echo "Creating admin credentials..."
 docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -i /tmp/02_create_admin_credentials.sql
 
-echo "Проверяем таблицы..."
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -i /tmp/03_check_users.sql
+echo "Verifying tables..."
+./check_tables/check_UserDB_tables.sh
+./check_tables/check_RightsDB_tables.sh
 
-echo "Готово ✅"
+echo "Done ✅"
