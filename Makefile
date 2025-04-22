@@ -1,95 +1,130 @@
-.PHONY: up down check-db platform-specific check-prerequisites check-docker check-github-desktop
+.PHONY: all check-prerequisites check-docker check-github-desktop start-services check-services check-db check-rabbitmq check-auth check-user check-rights check-all
 
-# Default target
-all: check-prerequisites up check-db platform-specific
+all: check-prerequisites start-services check-services
 
-# Check prerequisites
 check-prerequisites: check-docker check-github-desktop
 
-# Check if Docker is running
 check-docker:
 	@echo "Checking if Docker is running..."
-	@if ! docker info > /dev/null 2>&1; then \
-		echo "Docker is not running. Starting Docker..."; \
-		case "$$(uname -s)" in \
-			Darwin) \
-				open -a Docker; \
-				;; \
-			Linux) \
-				sudo systemctl start docker; \
-				;; \
-			MINGW*|MSYS*|CYGWIN*) \
-				start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"; \
-				;; \
-		esac; \
-		echo "Waiting for Docker to start..."; \
-		while ! docker info > /dev/null 2>&1; do \
-			sleep 5; \
-		done; \
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		if ! docker info > /dev/null 2>&1; then \
+			echo "Docker is not running. Starting Docker Desktop..."; \
+			open -a Docker; \
+			echo "Waiting for Docker to start..."; \
+			while ! docker info > /dev/null 2>&1; do sleep 1; done; \
+			echo "Docker is now running!"; \
+		else \
+			echo "Docker is already running!"; \
+		fi \
+	elif [ "$(shell uname)" = "Linux" ]; then \
+		if ! systemctl is-active --quiet docker; then \
+			echo "Docker is not running. Starting Docker..."; \
+			sudo systemctl start docker; \
+			echo "Waiting for Docker to start..."; \
+			while ! systemctl is-active --quiet docker; do sleep 1; done; \
+			echo "Docker is now running!"; \
+		else \
+			echo "Docker is already running!"; \
+		fi \
+	elif [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		if ! docker info > /dev/null 2>&1; then \
+			echo "Docker is not running. Starting Docker Desktop..."; \
+			start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"; \
+			echo "Waiting for Docker to start..."; \
+			while ! docker info > /dev/null 2>&1; do sleep 1; done; \
+			echo "Docker is now running!"; \
+		else \
+			echo "Docker is already running!"; \
+		fi \
+	else \
+		echo "Unsupported operating system"; \
+		exit 1; \
 	fi
-	@echo "Docker is running!"
 
-# Check if GitHub Desktop is running
 check-github-desktop:
 	@echo "Checking if GitHub Desktop is running..."
-	@case "$$(uname -s)" in \
-		Darwin) \
-			if ! pgrep -x "GitHub Desktop" > /dev/null; then \
-				echo "GitHub Desktop is not running. Starting GitHub Desktop..."; \
-				open -a "GitHub Desktop"; \
-				sleep 5; \
-			fi; \
-			;; \
-		Linux) \
-			if ! pgrep -x "github-desktop" > /dev/null; then \
-				echo "GitHub Desktop is not running. Please start it manually."; \
-				exit 1; \
-			fi; \
-			;; \
-		MINGW*|MSYS*|CYGWIN*) \
-			if ! tasklist | findstr "GitHubDesktop.exe" > nul; then \
-				echo "GitHub Desktop is not running. Starting GitHub Desktop..."; \
-				start "" "%LOCALAPPDATA%\GitHubDesktop\GitHubDesktop.exe"; \
-				sleep 5; \
-			fi; \
-			;; \
-	esac
-	@echo "GitHub Desktop is running!"
-
-# Start all services
-up:
-	docker compose up -d
-
-# Stop all services
-down:
-	docker compose down
-
-# Check if SQL Server is ready
-check-db:
-	@echo "Waiting for SQL Server to be ready..."
-	@while ! docker exec sqlserver_db /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P "User_1234" -Q "SELECT 1" > /dev/null 2>&1; do \
-		echo "SQL Server is not ready yet..."; \
-		sleep 5; \
-	done
-	@echo "SQL Server is ready!"
-
-# Platform-specific tasks
-platform-specific:
-	@case "$$(uname -s)" in \
-		Darwin) \
-			echo "Running macOS specific tasks..."; \
-			./install_admin_macos.sh; \
-			;; \
-		Linux) \
-			echo "Running Linux specific tasks..."; \
-			./install_admin_linux.sh; \
-			;; \
-		MINGW*|MSYS*|CYGWIN*) \
-			echo "Running Windows specific tasks..."; \
-			./install_admin_windows.bat; \
-			;; \
-		*) \
-			echo "Unsupported platform"; \
+	@if [ "$(shell uname)" = "Darwin" ]; then \
+		if ! pgrep -q "GitHub Desktop"; then \
+			echo "GitHub Desktop is not running. Starting GitHub Desktop..."; \
+			open -a "GitHub Desktop"; \
+			echo "Waiting for GitHub Desktop to start..."; \
+			while ! pgrep -q "GitHub Desktop"; do sleep 1; done; \
+			echo "GitHub Desktop is now running!"; \
+		else \
+			echo "GitHub Desktop is already running!"; \
+		fi \
+	elif [ "$(shell uname)" = "Linux" ]; then \
+		if ! pgrep -q "github-desktop"; then \
+			echo "GitHub Desktop is not running. Please start it manually."; \
 			exit 1; \
-			;; \
-	esac 
+		else \
+			echo "GitHub Desktop is already running!"; \
+		fi \
+	elif [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		if ! tasklist | findstr /i "GitHubDesktop.exe" > nul; then \
+			echo "GitHub Desktop is not running. Starting GitHub Desktop..."; \
+			start "" "%LOCALAPPDATA%\GitHubDesktop\GitHubDesktop.exe"; \
+			echo "Waiting for GitHub Desktop to start..."; \
+			while ! tasklist | findstr /i "GitHubDesktop.exe" > nul; do sleep 1; done; \
+			echo "GitHub Desktop is now running!"; \
+		else \
+			echo "GitHub Desktop is already running!"; \
+		fi \
+	else \
+		echo "Unsupported operating system"; \
+		exit 1; \
+	fi
+
+start-services:
+	@echo "Starting services..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		powershell -ExecutionPolicy Bypass -File ./setup.ps1; \
+	else \
+		chmod +x ./setup.sh && ./setup.sh; \
+	fi
+
+check-services: check-db check-rabbitmq check-auth check-user check-rights
+
+check-db:
+	@echo "Checking database..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		./check_tables/check_UserDB_tables.bat; \
+		./check_tables/check_RightsDB_tables.bat; \
+	else \
+		chmod +x ./check_tables/check_UserDB_tables.sh && ./check_tables/check_UserDB_tables.sh; \
+		chmod +x ./check_tables/check_RightsDB_tables.sh && ./check_tables/check_RightsDB_tables.sh; \
+	fi
+
+check-rabbitmq:
+	@echo "Checking RabbitMQ..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		powershell -ExecutionPolicy Bypass -File ./check_rabbitmq.ps1; \
+	else \
+		chmod +x ./check_rabbitmq.sh && ./check_rabbitmq.sh; \
+	fi
+
+check-auth:
+	@echo "Checking AuthService..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		powershell -ExecutionPolicy Bypass -File ./check_auth.ps1; \
+	else \
+		chmod +x ./check_auth.sh && ./check_auth.sh; \
+	fi
+
+check-user:
+	@echo "Checking UserService..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		powershell -ExecutionPolicy Bypass -File ./check_user.ps1; \
+	else \
+		chmod +x ./check_user.sh && ./check_user.sh; \
+	fi
+
+check-rights:
+	@echo "Checking RightsService..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		powershell -ExecutionPolicy Bypass -File ./check_rights.ps1; \
+	else \
+		chmod +x ./check_rights.sh && ./check_rights.sh; \
+	fi
+
+check-all: check-services 
