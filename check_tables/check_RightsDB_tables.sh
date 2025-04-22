@@ -7,21 +7,18 @@ DATABASE="RightsDB"
 echo "Checking RightsDB tables..."
 
 echo "Roles:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM Roles"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, CreatedBy, IsActive FROM Roles"
 
-echo "RolesLocalizations:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM RolesLocalizations"
+echo -e "\nRolesLocalizations:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, RoleId, Locale, Name FROM RolesLocalizations"
 
-echo "Rights:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM Rights"
+echo -e "\nRightsLocalizations:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, RightId, Locale, Name FROM RightsLocalizations"
 
-echo "RightsLocalizations:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM RightsLocalizations"
+echo -e "\nRolesRights:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, RoleId, RightId, CreatedBy FROM RolesRights"
 
-echo "RolesRights:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM RolesRights"
+echo -e "\nUsersRoles:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, UserId, RoleId, IsActive FROM UsersRoles"
 
-echo "UsersRoles:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM UsersRoles"
-
-echo "Done ✅" 
+echo -e "\nDone ✅" 

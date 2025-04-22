@@ -5,10 +5,10 @@ USE UserDB;
 EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
 
 -- Delete data from all tables
-DELETE FROM UserSettings;
-DELETE FROM UserProfiles;
-DELETE FROM UserAvatars;
-DELETE FROM UserCredentials;
+DELETE FROM UsersAdditions;
+DELETE FROM UsersCommunications;
+DELETE FROM UsersAvatars;
+DELETE FROM UsersCredentials;
 DELETE FROM Users;
 
 -- Enable foreign key constraints
@@ -41,7 +41,6 @@ EXEC sp_MSforeachtable 'ALTER TABLE ? NOCHECK CONSTRAINT ALL';
 DELETE FROM UsersRoles;
 DELETE FROM RolesRights;
 DELETE FROM RightsLocalizations;
-DELETE FROM Rights;
 DELETE FROM RolesLocalizations;
 DELETE FROM Roles;
 

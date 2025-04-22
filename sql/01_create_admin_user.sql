@@ -1,17 +1,20 @@
 USE UserDB;
 
--- Create admin user with complete profile
-INSERT INTO Users (Id, FirstName, LastName, MiddleName, Email, PhoneNumber, CreatedAt, UpdatedAt, IsActive)
-VALUES ('11111111-1111-1111-1111-111111111111', 'Admin', 'User', 'System', 'admin@universityhelper.com', '+1234567890', GETDATE(), GETDATE(), 1);
+-- Create admin user
+INSERT INTO Users (Id, FirstName, LastName, MiddleName, IsAdmin, IsActive, CreatedBy)
+VALUES ('11111111-1111-1111-1111-111111111111', 'Admin', 'User', 'System', 1, 1, '11111111-1111-1111-1111-111111111111');
 
--- Create admin profile
-INSERT INTO UserProfiles (UserId, Bio, BirthDate, Gender, Address, UniversityId, FacultyId, DepartmentId, GroupId, StudentId, EmployeeId)
-VALUES ('11111111-1111-1111-1111-111111111111', 'System Administrator', '1990-01-01', 'M', 'System Address', NULL, NULL, NULL, NULL, NULL, NULL);
+-- Create admin user additions
+INSERT INTO UsersAdditions (Id, UserId, About, DateOfBirth, ModifiedBy, ModifiedAtUtc)
+VALUES (NEWID(), '11111111-1111-1111-1111-111111111111', 'System Administrator', '1990-01-01', '11111111-1111-1111-1111-111111111111', GETUTCDATE());
 
--- Create admin settings
-INSERT INTO UserSettings (UserId, Language, Theme, NotificationsEnabled, EmailNotifications, PushNotifications)
-VALUES ('11111111-1111-1111-1111-111111111111', 'en', 'light', 1, 1, 1);
+-- Create admin user communications
+INSERT INTO UsersCommunications (Id, UserId, Type, Value, IsConfirmed, CreatedBy, CreatedAtUtc)
+VALUES 
+(NEWID(), '11111111-1111-1111-1111-111111111111', 1, 'admin@universityhelper.com', 1, '11111111-1111-1111-1111-111111111111', GETUTCDATE()),
+(NEWID(), '11111111-1111-1111-1111-111111111111', 2, '+1234567890', 1, '11111111-1111-1111-1111-111111111111', GETUTCDATE()),
+(NEWID(), '11111111-1111-1111-1111-111111111111', 3, 'admin@universityhelper.com', 1, '11111111-1111-1111-1111-111111111111', GETUTCDATE());
 
--- Create admin avatar
-INSERT INTO UserAvatars (UserId, AvatarUrl, ThumbnailUrl, CreatedAt)
-VALUES ('11111111-1111-1111-1111-111111111111', '/avatars/admin.png', '/avatars/admin_thumb.png', GETDATE());
+-- Create admin user avatar
+INSERT INTO UsersAvatars (Id, UserId, AvatarId, IsCurrentAvatar)
+VALUES (NEWID(), '11111111-1111-1111-1111-111111111111', '33333333-3333-3333-3333-333333333333', 1);

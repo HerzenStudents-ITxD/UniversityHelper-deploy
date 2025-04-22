@@ -7,27 +7,21 @@ DATABASE="CommunityDB"
 echo "Checking CommunityDB tables..."
 
 echo "Communities:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM Communities"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, Name, Avatar, CreatedBy, CreatedAtUtc FROM Communities"
 
-echo "CommunityAvatars:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM CommunityAvatars"
+echo -e "\nAgents:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, AgentId, CommunityId FROM Agents"
 
-echo "CommunityAgents:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM CommunityAgents"
+echo -e "\nHiddenCommunities:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, UserId, CommunityId FROM HiddenCommunities"
 
-echo "Posts:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM Posts"
+echo -e "\nNews:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, Title, Text, AuthorId, CommunityId FROM News"
 
-echo "PostAttachments:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM PostAttachments"
+echo -e "\nNewsPhoto:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, Photo, NewsId FROM NewsPhoto"
 
-echo "PostParticipants:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM PostParticipants"
+echo -e "\nParticipating:"
+docker exec $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT Id, UserId, NewsId FROM Participating"
 
-echo "PostLocations:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM PostLocations"
-
-echo "HiddenCommunities:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM HiddenCommunities"
-
-echo "Done ✅" 
+echo -e "\nDone ✅" 
