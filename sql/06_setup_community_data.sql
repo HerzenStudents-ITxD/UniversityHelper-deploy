@@ -4,92 +4,71 @@ USE CommunityDB;
 DECLARE @Now DATETIME2 = GETUTCDATE();
 DECLARE @AdminUserId UNIQUEIDENTIFIER = '11111111-1111-1111-1111-111111111111';
 DECLARE @AdminCommunityId UNIQUEIDENTIFIER = '55555555-5555-5555-5555-555555555555';
-DECLARE @AdminAvatarId UNIQUEIDENTIFIER = '66666666-6666-6666-6666-666666666666';
-DECLARE @AdminPostId UNIQUEIDENTIFIER = '77777777-7777-7777-7777-777777777777';
-DECLARE @AdminLocationId UNIQUEIDENTIFIER = '88888888-8888-8888-8888-888888888888';
+DECLARE @AdminNewsId UNIQUEIDENTIFIER = '77777777-7777-7777-7777-777777777777';
+DECLARE @AdminNewsPhotoId UNIQUEIDENTIFIER = '88888888-8888-8888-8888-888888888888';
+DECLARE @AdminAgentId UNIQUEIDENTIFIER = '99999999-9999-9999-9999-999999999999';
 
 -- Create admin community
-INSERT INTO Communities (Id, Name, CreatedBy, CreatedAtUtc)
+INSERT INTO Communities (Id, Name, Avatar, CreatedBy, CreatedAtUtc, ModifiedBy, ModifiedAtUtc)
 VALUES (
     @AdminCommunityId,
     'University Administration',
+    'default-avatar.png',
+    @AdminUserId,
+    @Now,
     @AdminUserId,
     @Now
-);
-
--- Add community avatar
-INSERT INTO CommunityAvatars (Id, CommunityId, AvatarId, IsCurrentAvatar)
-VALUES (
-    NEWID(),
-    @AdminCommunityId,
-    @AdminAvatarId,
-    1
 );
 
 -- Add admin as community agent
-INSERT INTO CommunityAgents (Id, CommunityId, UserId, CreatedBy, CreatedAtUtc)
+INSERT INTO Agents (Id, AgentId, CommunityId)
 VALUES (
     NEWID(),
-    @AdminCommunityId,
-    @AdminUserId,
-    @AdminUserId,
-    @Now
+    @AdminAgentId,
+    @AdminCommunityId
 );
 
--- Create sample post
-INSERT INTO Posts (
+-- Create sample news
+INSERT INTO News (
     Id,
-    CommunityId,
+    Date,
     Title,
-    Content,
-    CreatedBy,
-    CreatedAtUtc,
-    HasParticipants,
-    HasLocation
+    Text,
+    AuthorId,
+    CommunityId
 )
 VALUES (
-    @AdminPostId,
-    @AdminCommunityId,
+    @AdminNewsId,
+    @Now,
     'Welcome to University Helper',
     'Welcome to our new platform! This is the official announcement from the university administration. We are excited to introduce new features for better communication and organization.',
     @AdminUserId,
-    @Now,
-    1,
-    1
+    @AdminCommunityId
 );
 
--- Add post location
-INSERT INTO PostLocations (
+-- Add news photo
+INSERT INTO NewsPhoto (
     Id,
-    PostId,
-    Latitude,
-    Longitude,
-    Address,
-    CreatedBy,
-    CreatedAtUtc
+    Photo,
+    NewsId
 )
 VALUES (
-    @AdminLocationId,
-    @AdminPostId,
-    55.7558,  -- Moscow latitude
-    37.6173,  -- Moscow longitude
-    'Main University Building, Room 101',
-    @AdminUserId,
-    @Now
+    @AdminNewsPhotoId,
+    'welcome-photo.jpg',
+    @AdminNewsId
 );
 
--- Add sample post participants
-INSERT INTO PostParticipants (Id, PostId, UserId, CreatedBy, CreatedAtUtc)
-VALUES 
-    (NEWID(), @AdminPostId, @AdminUserId, @AdminUserId, @Now),
-    (NEWID(), @AdminPostId, '22222222-2222-2222-2222-222222222222', @AdminUserId, @Now),
-    (NEWID(), @AdminPostId, '33333333-3333-3333-3333-333333333333', @AdminUserId, @Now);
-
--- Add sample post attachments
-INSERT INTO PostAttachments (Id, PostId, FileId, CreatedBy, CreatedAtUtc)
-VALUES 
-    (NEWID(), @AdminPostId, '99999999-9999-9999-9999-999999999999', @AdminUserId, @Now),
-    (NEWID(), @AdminPostId, 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa', @AdminUserId, @Now);
+-- Add admin as news participant
+INSERT INTO Participating (
+    Id,
+    UserId,
+    NewsId
+)
+VALUES (
+    NEWID(),
+    @AdminUserId,
+    @AdminNewsId
+);
 
 -- Verify setup
 PRINT 'Community data setup completed';
@@ -97,29 +76,15 @@ PRINT 'Checking community data:';
 SELECT 
     c.Id as CommunityId,
     c.Name as CommunityName,
-    c.Description,
-    c.IsActive,
-    ca.AvatarId,
-    p.Title as PostTitle,
-    p.Content as PostContent,
-    p.IsActive as PostIsActive,
-    pl.Address as Location,
-    COUNT(DISTINCT pp.UserId) as ParticipantCount,
-    COUNT(DISTINCT pa.Id) as AttachmentCount
+    c.Avatar,
+    a.AgentId,
+    n.Title as NewsTitle,
+    n.Text as NewsContent,
+    np.Photo,
+    p.UserId as ParticipantId
 FROM Communities c
-LEFT JOIN CommunityAvatars ca ON c.Id = ca.CommunityId
-LEFT JOIN Posts p ON c.Id = p.CommunityId
-LEFT JOIN PostLocations pl ON p.Id = pl.PostId
-LEFT JOIN PostParticipants pp ON p.Id = pp.PostId
-LEFT JOIN PostAttachments pa ON p.Id = pa.PostId
-WHERE c.Id = @AdminCommunityId
-GROUP BY 
-    c.Id,
-    c.Name,
-    c.Description,
-    c.IsActive,
-    ca.AvatarId,
-    p.Title,
-    p.Content,
-    p.IsActive,
-    pl.Address; 
+LEFT JOIN Agents a ON c.Id = a.CommunityId
+LEFT JOIN News n ON c.Id = n.CommunityId
+LEFT JOIN NewsPhoto np ON n.Id = np.NewsId
+LEFT JOIN Participating p ON n.Id = p.NewsId
+WHERE c.Id = @AdminCommunityId; 
