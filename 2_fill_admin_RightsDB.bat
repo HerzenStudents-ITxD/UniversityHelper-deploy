@@ -1,6 +1,6 @@
 @echo off
 
-set RIGHTS_DB_PASSWORD=Rights_1234
+set RIGHTS_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db
 set DATABASE=RightsDB
 

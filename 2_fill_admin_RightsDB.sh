@@ -1,6 +1,6 @@
 #!/bin/bash
 
-RIGHTS_DB_PASSWORD="Rights_1234"
+RIGHTS_DB_PASSWORD="User_1234"
 CONTAINER="sqlserver_db"
 DATABASE="RightsDB"
 
