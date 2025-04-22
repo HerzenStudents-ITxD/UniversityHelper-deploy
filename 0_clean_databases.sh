@@ -3,7 +3,7 @@
 # Variables
 USER_DB_PASSWORD="User_1234"
 CONTAINER="sqlserver_db"
-SQL_SCRIPT="sql/00_clean_databases.sql"
+SQL_SCRIPT="UniversityHelper-deploy/sql/00_clean_databases.sql"
 
 echo "Cleaning all databases..."
 
