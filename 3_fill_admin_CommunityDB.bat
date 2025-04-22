@@ -1,64 +1,28 @@
 @echo off
-setlocal
+setlocal enabledelayedexpansion
 
-REM Variables
 set USER_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db
 set DATABASE=CommunityDB
-set SQL_SCRIPT=sql\06_setup_community_data.sql
+set USER_ID=11111111-1111-1111-1111-111111111111
 
-echo Installing community data...
-
-REM Check if SQL Server is ready
-echo Waiting for SQL Server to be ready...
-:wait_loop
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -Q "SELECT 1" > nul 2>&1
-if %errorlevel% neq 0 (
-    echo SQL Server is not ready yet...
-    timeout /t 5 > nul
-    goto wait_loop
-)
-echo SQL Server is ready!
-
-REM Check existing tables
 echo Checking existing CommunityDB tables...
-
-echo Communities:
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "SELECT Id, Name, Avatar, CreatedBy, CreatedAtUtc FROM Communities"
+docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "USE %DATABASE%; SELECT 'Communities' as TableName, COUNT(*) as Count FROM Communities UNION ALL SELECT 'Agents', COUNT(*) FROM Agents UNION ALL SELECT 'HiddenCommunities', COUNT(*) FROM HiddenCommunities UNION ALL SELECT 'News', COUNT(*) FROM News UNION ALL SELECT 'NewsPhoto', COUNT(*) FROM NewsPhoto UNION ALL SELECT 'Participating', COUNT(*) FROM Participating;"
 
 echo.
-echo Agents:
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "SELECT Id, AgentId, CommunityId FROM Agents"
+echo Cleaning up existing data...
+docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "USE %DATABASE%; DELETE FROM Participating WHERE UserId = '%USER_ID%'; DELETE FROM News WHERE AuthorId = '%USER_ID%'; DELETE FROM Agents WHERE AgentId = '%USER_ID%'; DELETE FROM HiddenCommunities WHERE UserId = '%USER_ID%'; DELETE FROM Communities WHERE CreatedBy = '%USER_ID%';"
 
-echo.
-echo HiddenCommunities:
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "SELECT Id, UserId, CommunityId FROM HiddenCommunities"
-
-echo.
-echo News:
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "SELECT Id, Title, Text, AuthorId, CommunityId FROM News"
-
-echo.
-echo NewsPhoto:
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "SELECT Id, Photo, NewsId FROM NewsPhoto"
-
-echo.
-echo Participating:
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "SELECT Id, UserId, NewsId FROM Participating"
-
-REM Copy SQL script to container
 echo.
 echo Copying SQL script to container...
-docker cp %SQL_SCRIPT% %CONTAINER%:/setup_community_data.sql
+docker cp ./sql/06_setup_community_data.sql %CONTAINER%:/tmp/
 
-REM Execute SQL script
 echo Executing SQL script...
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /setup_community_data.sql
+docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/06_setup_community_data.sql
 
-REM Verify tables after update
 echo.
-echo Verifying CommunityDB tables after update...
+echo Verifying CommunityDB tables...
 call .\check_tables\check_CommunityDB_tables.bat
 
-echo Community data installation completed! ✅
+echo Done ✅
 pause 
