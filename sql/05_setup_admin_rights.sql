@@ -109,7 +109,10 @@ FROM @Rights;
 INSERT INTO UsersRoles (Id, UserId, RoleId, IsActive, CreatedBy)
 VALUES (NEWID(), @AdminUserId, @AdminRoleId, 1, @AdminUserId);
 
--- Verify the setup
+-- Verify setup
+PRINT 'Verifying admin rights setup...';
+
+-- Check table counts
 SELECT 'Roles' as TableName, COUNT(*) as Count FROM Roles
 UNION ALL
 SELECT 'RolesLocalizations', COUNT(*) FROM RolesLocalizations
@@ -118,4 +121,82 @@ SELECT 'RightsLocalizations', COUNT(*) FROM RightsLocalizations
 UNION ALL
 SELECT 'RolesRights', COUNT(*) FROM RolesRights
 UNION ALL
-SELECT 'UsersRoles', COUNT(*) FROM UsersRoles; 
+SELECT 'UsersRoles', COUNT(*) FROM UsersRoles;
+
+-- Check Roles table
+PRINT 'Roles table details:';
+SELECT 
+    Id,
+    CreatedBy,
+    IsActive,
+    CreatedAtUtc
+FROM Roles 
+WHERE Id = @AdminRoleId;
+
+-- Check RolesLocalizations table
+PRINT 'RolesLocalizations table details:';
+SELECT 
+    Id,
+    RoleId,
+    Locale,
+    Name,
+    IsActive,
+    CreatedBy,
+    CreatedAtUtc
+FROM RolesLocalizations 
+WHERE RoleId = @AdminRoleId
+ORDER BY Locale;
+
+-- Check RightsLocalizations table
+PRINT 'RightsLocalizations table details:';
+SELECT 
+    Id,
+    RightId,
+    Locale,
+    Name
+FROM RightsLocalizations 
+ORDER BY RightId, Locale;
+
+-- Check RolesRights table
+PRINT 'RolesRights table details:';
+SELECT 
+    rr.Id,
+    rr.RoleId,
+    rr.RightId,
+    rl.Name as RightName,
+    rr.CreatedBy,
+    rr.CreatedAtUtc
+FROM RolesRights rr
+JOIN RightsLocalizations rl ON rr.RightId = rl.RightId AND rl.Locale = 'en'
+WHERE rr.RoleId = @AdminRoleId
+ORDER BY rr.RightId;
+
+-- Check UsersRoles table
+PRINT 'UsersRoles table details:';
+SELECT 
+    ur.Id,
+    ur.UserId,
+    ur.RoleId,
+    rl.Name as RoleName,
+    ur.IsActive,
+    ur.CreatedBy,
+    ur.CreatedAtUtc
+FROM UsersRoles ur
+JOIN RolesLocalizations rl ON ur.RoleId = rl.RoleId AND rl.Locale = 'en'
+WHERE ur.UserId = @AdminUserId;
+
+-- Final verification summary
+SELECT 
+    r.Id as RoleId,
+    rl.Name as RoleName,
+    r.IsActive as RoleIsActive,
+    COUNT(DISTINCT rr.RightId) as AssignedRightsCount,
+    STRING_AGG(CAST(rr.RightId as NVARCHAR(10)) + ': ' + rln.Name, '; ') as AssignedRights,
+    COUNT(DISTINCT ur.UserId) as AssignedUsersCount
+FROM Roles r
+JOIN RolesLocalizations rl ON r.Id = rl.RoleId AND rl.Locale = 'en'
+LEFT JOIN RolesRights rr ON r.Id = rr.RoleId
+LEFT JOIN RightsLocalizations rln ON rr.RightId = rln.RightId AND rln.Locale = 'en'
+LEFT JOIN UsersRoles ur ON r.Id = ur.RoleId
+WHERE r.Id = @AdminRoleId
+GROUP BY r.Id, rl.Name, r.IsActive; 
