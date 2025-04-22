@@ -45,23 +45,82 @@ VALUES (
 );
 
 -- Verify setup
-PRINT 'Admin user data setup completed';
-PRINT 'Checking user data:';
+PRINT 'Verifying admin user setup...';
+
+-- Check table counts
+SELECT 'Users' as TableName, COUNT(*) as Count FROM Users WHERE Id = @AdminUserId
+UNION ALL
+SELECT 'UsersAdditions', COUNT(*) FROM UsersAdditions WHERE UserId = @AdminUserId
+UNION ALL
+SELECT 'UsersCommunications', COUNT(*) FROM UsersCommunications WHERE UserId = @AdminUserId
+UNION ALL
+SELECT 'UsersAvatars', COUNT(*) FROM UsersAvatars WHERE UserId = @AdminUserId;
+
+-- Check Users table
+PRINT 'Users table details:';
 SELECT 
-    u.Id,
-    u.FirstName,
-    u.LastName,
-    u.MiddleName,
+    Id,
+    FirstName,
+    LastName,
+    MiddleName,
+    IsAdmin,
+    IsActive,
+    CreatedBy,
+    CreatedAtUtc
+FROM Users 
+WHERE Id = @AdminUserId;
+
+-- Check UsersAdditions table
+PRINT 'UsersAdditions table details:';
+SELECT 
+    Id,
+    UserId,
+    About,
+    DateOfBirth,
+    ModifiedBy,
+    ModifiedAtUtc
+FROM UsersAdditions 
+WHERE UserId = @AdminUserId;
+
+-- Check UsersCommunications table
+PRINT 'UsersCommunications table details:';
+SELECT 
+    Id,
+    UserId,
+    Type,
+    Value,
+    IsConfirmed,
+    CreatedBy,
+    CreatedAtUtc
+FROM UsersCommunications 
+WHERE UserId = @AdminUserId
+ORDER BY Type;
+
+-- Check UsersAvatars table
+PRINT 'UsersAvatars table details:';
+SELECT 
+    Id,
+    UserId,
+    AvatarId,
+    IsCurrentAvatar
+FROM UsersAvatars 
+WHERE UserId = @AdminUserId;
+
+-- Final verification summary
+SELECT 
+    u.Id as UserId,
+    u.FirstName + ' ' + u.LastName as FullName,
     u.IsAdmin,
-    u.IsActive,
     ua.About,
-    ua.DateOfBirth,
-    uc.Value as Email,
-    ua2.Value as Phone,
-    ua3.Value as BaseEmail
+    STRING_AGG(CASE uc.Type 
+        WHEN 1 THEN 'Email: ' + uc.Value
+        WHEN 2 THEN 'Phone: ' + uc.Value
+        WHEN 3 THEN 'Base Email: ' + uc.Value
+    END, '; ') as Communications,
+    uav.AvatarId
 FROM Users u
 LEFT JOIN UsersAdditions ua ON u.Id = ua.UserId
-LEFT JOIN UsersCommunications uc ON u.Id = uc.UserId AND uc.Type = 1
-LEFT JOIN UsersCommunications ua2 ON u.Id = ua2.UserId AND ua2.Type = 2
-LEFT JOIN UsersCommunications ua3 ON u.Id = ua3.UserId AND ua3.Type = 3
-WHERE u.Id = @AdminUserId; 
+LEFT JOIN UsersCommunications uc ON u.Id = uc.UserId
+LEFT JOIN UsersAvatars uav ON u.Id = uav.UserId AND uav.IsCurrentAvatar = 1
+WHERE u.Id = @AdminUserId
+GROUP BY u.Id, u.FirstName, u.LastName, u.IsAdmin, ua.About, uav.AvatarId; 
