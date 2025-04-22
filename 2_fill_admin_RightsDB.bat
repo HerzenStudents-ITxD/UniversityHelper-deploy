@@ -14,6 +14,71 @@ echo Checking table structure...
 docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %RIGHTS_DB_PASSWORD% -d %DATABASE% -Q "USE %DATABASE%; SELECT TABLE_NAME, COLUMN_NAME, IS_NULLABLE, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME IN ('Roles', 'RolesLocalizations', 'RightsLocalizations', 'RolesRights', 'UsersRoles') ORDER BY TABLE_NAME, ORDINAL_POSITION;"
 
 echo.
+echo Creating tables if they don't exist...
+docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %RIGHTS_DB_PASSWORD% -d %DATABASE% -Q "USE %DATABASE%; 
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Roles') 
+CREATE TABLE Roles (
+    Id uniqueidentifier PRIMARY KEY,
+    CreatedBy uniqueidentifier NOT NULL,
+    CreatedAtUtc datetime2 NOT NULL,
+    ModifiedBy uniqueidentifier NULL,
+    ModifiedAtUtc datetime2 NULL,
+    IsActive bit NOT NULL
+);
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RolesLocalizations') 
+CREATE TABLE RolesLocalizations (
+    Id uniqueidentifier PRIMARY KEY,
+    RoleId uniqueidentifier NOT NULL,
+    Locale nvarchar(10) NOT NULL,
+    Name nvarchar(100) NOT NULL,
+    Description nvarchar(max) NULL,
+    CreatedBy uniqueidentifier NOT NULL,
+    CreatedAtUtc datetime2 NOT NULL,
+    ModifiedBy uniqueidentifier NULL,
+    ModifiedAtUtc datetime2 NULL,
+    IsActive bit NOT NULL
+);
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RightsLocalizations') 
+CREATE TABLE RightsLocalizations (
+    Id uniqueidentifier PRIMARY KEY,
+    RightId uniqueidentifier NOT NULL,
+    Locale nvarchar(10) NOT NULL,
+    Name nvarchar(100) NOT NULL,
+    Description nvarchar(max) NULL,
+    CreatedBy uniqueidentifier NOT NULL,
+    CreatedAtUtc datetime2 NOT NULL,
+    ModifiedBy uniqueidentifier NULL,
+    ModifiedAtUtc datetime2 NULL,
+    IsActive bit NOT NULL
+);
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RolesRights') 
+CREATE TABLE RolesRights (
+    Id uniqueidentifier PRIMARY KEY,
+    RoleId uniqueidentifier NOT NULL,
+    RightId uniqueidentifier NOT NULL,
+    CreatedBy uniqueidentifier NOT NULL,
+    CreatedAtUtc datetime2 NOT NULL,
+    ModifiedBy uniqueidentifier NULL,
+    ModifiedAtUtc datetime2 NULL,
+    IsActive bit NOT NULL
+);
+
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'UsersRoles') 
+CREATE TABLE UsersRoles (
+    Id uniqueidentifier PRIMARY KEY,
+    UserId uniqueidentifier NOT NULL,
+    RoleId uniqueidentifier NOT NULL,
+    CreatedBy uniqueidentifier NOT NULL,
+    CreatedAtUtc datetime2 NOT NULL,
+    ModifiedBy uniqueidentifier NULL,
+    ModifiedAtUtc datetime2 NULL,
+    IsActive bit NOT NULL
+);"
+
+echo.
 echo Printing current table contents...
 echo.
 echo Roles table:
