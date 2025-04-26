@@ -1,202 +1,152 @@
 USE RightsDB;
 
--- Drop existing tables if they exist
-IF EXISTS (SELECT * FROM sys.tables WHERE name = 'UsersRoles')
-    DROP TABLE UsersRoles;
-IF EXISTS (SELECT * FROM sys.tables WHERE name = 'RolesRights')
-    DROP TABLE RolesRights;
-IF EXISTS (SELECT * FROM sys.tables WHERE name = 'RolesLocalizations')
-    DROP TABLE RolesLocalizations;
-IF EXISTS (SELECT * FROM sys.tables WHERE name = 'RightsLocalizations')
-    DROP TABLE RightsLocalizations;
-IF EXISTS (SELECT * FROM sys.tables WHERE name = 'Roles')
-    DROP TABLE Roles;
 
--- Create Roles table
-CREATE TABLE Roles (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    CreatedBy UNIQUEIDENTIFIER,
-    IsActive BIT DEFAULT 1,
-    CreatedAtUtc DATETIME2 DEFAULT GETUTCDATE()
-);
-
--- Create RolesLocalizations table
-CREATE TABLE RolesLocalizations (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    RoleId UNIQUEIDENTIFIER NOT NULL,
-    Locale NVARCHAR(10) NOT NULL,
-    Name NVARCHAR(100) NOT NULL,
-    IsActive BIT DEFAULT 1,
-    CreatedBy UNIQUEIDENTIFIER,
-    CreatedAtUtc DATETIME2 DEFAULT GETUTCDATE(),
-    FOREIGN KEY (RoleId) REFERENCES Roles(Id)
-);
-
--- Create RightsLocalizations table
-CREATE TABLE RightsLocalizations (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    RightId INT NOT NULL,
-    Locale NVARCHAR(10) NOT NULL,
-    Name NVARCHAR(100) NOT NULL
-);
-
--- Create RolesRights table
-CREATE TABLE RolesRights (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    RoleId UNIQUEIDENTIFIER NOT NULL,
-    RightId INT NOT NULL,
-    CreatedBy UNIQUEIDENTIFIER,
-    CreatedAtUtc DATETIME2 DEFAULT GETUTCDATE(),
-    FOREIGN KEY (RoleId) REFERENCES Roles(Id)
-);
-
--- Create UsersRoles table
-CREATE TABLE UsersRoles (
-    Id UNIQUEIDENTIFIER PRIMARY KEY,
-    UserId UNIQUEIDENTIFIER NOT NULL,
-    RoleId UNIQUEIDENTIFIER NOT NULL,
-    IsActive BIT DEFAULT 1,
-    CreatedBy UNIQUEIDENTIFIER,
-    CreatedAtUtc DATETIME2 DEFAULT GETUTCDATE(),
-    FOREIGN KEY (RoleId) REFERENCES Roles(Id)
-);
-
--- Insert admin role
-DECLARE @AdminRoleId UNIQUEIDENTIFIER = '11111111-1111-1111-1111-111111111111';
+-- Declare variables
+DECLARE @Now DATETIME2 = GETUTCDATE();
 DECLARE @AdminUserId UNIQUEIDENTIFIER = '11111111-1111-1111-1111-111111111111';
+DECLARE @AdminRoleId UNIQUEIDENTIFIER = '11111111-1111-1111-1111-111111111111';
 
-INSERT INTO Roles (Id, CreatedBy, IsActive)
-VALUES (@AdminRoleId, @AdminUserId, 1);
+-- Check if admin role already exists to avoid duplicates
+IF NOT EXISTS (SELECT 1 FROM Roles WHERE Id = @AdminRoleId)
+BEGIN
+    -- Insert admin role
+    INSERT INTO Roles (Id, IsActive, CreatedBy)
+    VALUES (@AdminRoleId, 1, @AdminUserId);
+END;
 
 -- Insert admin role localizations
-INSERT INTO RolesLocalizations (Id, RoleId, Locale, Name, IsActive, CreatedBy)
-VALUES 
-    (NEWID(), @AdminRoleId, 'en', 'System Administrator', 1, @AdminUserId),
-    (NEWID(), @AdminRoleId, 'ru', 'Системный администратор', 1, @AdminUserId);
+IF NOT EXISTS (SELECT 1 FROM RolesLocalizations WHERE RoleId = @AdminRoleId)
+BEGIN
+    INSERT INTO RolesLocalizations (Id, RoleId, Locale, Name, Description, IsActive, CreatedBy, CreatedAtUtc)
+    VALUES 
+        (NEWID(), @AdminRoleId, 'en', 'System Administrator', 'Full access to all system services', 1, @AdminUserId, @Now),
+        (NEWID(), @AdminRoleId, 'ru', 'Системный администратор', 'Полный доступ ко всем сервисам системы', 1, @AdminUserId, @Now);
+END;
 
 -- Define all service rights
-DECLARE @Rights TABLE (RightId INT, NameEn NVARCHAR(100), NameRu NVARCHAR(100));
-INSERT INTO @Rights (RightId, NameEn, NameRu) VALUES 
-    (1000, 'User Service Admin', 'Администратор сервиса пользователей'),
-    (2000, 'Auth Service Admin', 'Администратор сервиса аутентификации'),
-    (3000, 'University Service Admin', 'Администратор сервиса университета'),
-    (4000, 'Rights Service Admin', 'Администратор сервиса прав'),
-    (5000, 'Analytics Service Admin', 'Администратор сервиса аналитики'),
-    (6000, 'Email Service Admin', 'Администратор сервиса email'),
-    (7000, 'Feedback Service Admin', 'Администратор сервиса обратной связи'),
-    (800, 'Map Service Admin', 'Администратор сервиса карт'),
-    (900, 'Community Service Admin', 'Администратор сервиса сообществ'),
-    (1100, 'Post Service Admin', 'Администратор сервиса постов'),
-    (1200, 'Group Service Admin', 'Администратор сервиса групп'),
-    (1300, 'Timetable Service Admin', 'Администратор сервиса расписания'),
-    (1400, 'Note Service Admin', 'Администратор сервиса заметок'),
-    (1500, 'Wiki Service Admin', 'Администратор сервиса вики'),
-    (1600, 'News Service Admin', 'Администратор сервиса новостей'),
-    (1700, 'Event Service Admin', 'Администратор сервиса событий');
+DECLARE @Rights TABLE (
+    RightId INT,
+    NameEn NVARCHAR(100),
+    NameRu NVARCHAR(100),
+    DescriptionEn NVARCHAR(255),
+    DescriptionRu NVARCHAR(255)
+);
+
+INSERT INTO @Rights (RightId, NameEn, NameRu, DescriptionEn, DescriptionRu) VALUES 
+    (1000, 'User Service Admin', 'Администратор сервиса пользователей', 'Manage user accounts and profiles', 'Управление учетными записями и профилями пользователей'),
+    (2000, 'Auth Service Admin', 'Администратор сервиса аутентификации', 'Manage authentication and authorization', 'Управление аутентификацией и авторизацией'),
+    (3000, 'University Service Admin', 'Администратор сервиса университета', 'Manage university-related data', 'Управление данными университета'),
+    (4000, 'Rights Service Admin', 'Администратор сервиса прав', 'Manage roles and permissions', 'Управление ролями и правами'),
+    (5000, 'Analytics Service Admin', 'Администратор сервиса аналитики', 'Access and manage analytics data', 'Доступ и управление данными аналитики'),
+    (6000, 'Email Service Admin', 'Администратор сервиса email', 'Manage email communications', 'Управление email-коммуникациями'),
+    (7000, 'Feedback Service Admin', 'Администратор сервиса обратной связи', 'Manage user feedback', 'Управление обратной связью пользователей'),
+    (800, 'Map Service Admin', 'Администратор сервиса карт', 'Manage map-related features', 'Управление функциями карт'),
+    (900, 'Community Service Admin', 'Администратор сервиса сообществ', 'Manage community features', 'Управление функциями сообществ'),
+    (1100, 'Post Service Admin', 'Администратор сервиса постов', 'Manage posts and content', 'Управление постами и контентом'),
+    (1200, 'Group Service Admin', 'Администратор сервиса групп', 'Manage group functionalities', 'Управление функциями групп'),
+    (1300, 'Timetable Service Admin', 'Администратор сервиса расписания', 'Manage schedules and timetables', 'Управление расписаниями'),
+    (1400, 'Note Service Admin', 'Администратор сервиса заметок', 'Manage user notes', 'Управление заметками пользователей'),
+    (1500, 'Wiki Service Admin', 'Администратор сервиса вики', 'Manage wiki content', 'Управление контентом вики'),
+    (1600, 'News Service Admin', 'Администратор сервиса новостей', 'Manage news updates', 'Управление новостями'),
+    (1700, 'Event Service Admin', 'Администратор сервиса событий', 'Manage events and activities', 'Управление событиями и мероприятиями');
+
+-- Insert rights (assuming Rights table exists)
+IF NOT EXISTS (SELECT 1 FROM Rights WHERE RightId IN (SELECT RightId FROM @Rights))
+BEGIN
+    INSERT INTO Rights (RightId, CreatedBy) -- Assuming Rights table has these fields
+    SELECT RightId, @AdminUserId
+    FROM @Rights;
+END;
 
 -- Insert rights localizations
-INSERT INTO RightsLocalizations (Id, RightId, Locale, Name)
-SELECT NEWID(), RightId, 'en', NameEn FROM @Rights
-UNION ALL
-SELECT NEWID(), RightId, 'ru', NameRu FROM @Rights;
+IF NOT EXISTS (SELECT 1 FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM @Rights))
+BEGIN
+    INSERT INTO RightsLocalizations (Id, RightId, Locale, Name, Description)
+    SELECT NEWID(), RightId, 'en', NameEn, DescriptionEn FROM @Rights
+    UNION ALL
+    SELECT NEWID(), RightId, 'ru', NameRu, DescriptionRu FROM @Rights;
+END;
 
 -- Assign rights to admin role
-INSERT INTO RolesRights (Id, RoleId, RightId, CreatedBy)
-SELECT NEWID(), @AdminRoleId, RightId, @AdminUserId
-FROM @Rights;
+IF NOT EXISTS (SELECT 1 FROM RolesRights WHERE RoleId = @AdminRoleId)
+BEGIN
+    INSERT INTO RolesRights (Id, RoleId, RightId, CreatedBy)
+    SELECT NEWID(), @AdminRoleId, RightId, @AdminUserId
+    FROM @Rights;
+END;
 
 -- Assign admin role to user
-INSERT INTO UsersRoles (Id, UserId, RoleId, IsActive, CreatedBy)
-VALUES (NEWID(), @AdminUserId, @AdminRoleId, 1, @AdminUserId);
+IF NOT EXISTS (SELECT 1 FROM UsersRoles WHERE UserId = @AdminUserId AND RoleId = @AdminRoleId)
+BEGIN
+    INSERT INTO UsersRoles (Id, UserId, RoleId, IsActive, CreatedBy)
+    VALUES (NEWID(), @AdminUserId, @AdminRoleId, 1, @AdminUserId);
+END;
 
 -- Verify setup
-PRINT 'Verifying admin rights setup...';
+PRINT 'Verifying admin role and rights setup...';
 
 -- Check table counts
-SELECT 'Roles' as TableName, COUNT(*) as Count FROM Roles
+SELECT 'Roles' AS TableName, COUNT(*) AS Count FROM Roles WHERE Id = @AdminRoleId
 UNION ALL
-SELECT 'RolesLocalizations', COUNT(*) FROM RolesLocalizations
+SELECT 'RolesLocalizations', COUNT(*) FROM RolesLocalizations WHERE RoleId = @AdminRoleId
 UNION ALL
-SELECT 'RightsLocalizations', COUNT(*) FROM RightsLocalizations
+SELECT 'Rights', COUNT(*) FROM Rights WHERE RightId IN (SELECT RightId FROM @Rights)
 UNION ALL
-SELECT 'RolesRights', COUNT(*) FROM RolesRights
+SELECT 'RightsLocalizations', COUNT(*) FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM @Rights)
 UNION ALL
-SELECT 'UsersRoles', COUNT(*) FROM UsersRoles;
+SELECT 'RolesRights', COUNT(*) FROM RolesRights WHERE RoleId = @AdminRoleId
+UNION ALL
+SELECT 'UsersRoles', COUNT(*) FROM UsersRoles WHERE UserId = @AdminUserId AND RoleId = @AdminRoleId;
 
 -- Check Roles table
 PRINT 'Roles table details:';
-SELECT 
-    Id,
-    CreatedBy,
-    IsActive,
-    CreatedAtUtc
+SELECT Id, IsActive, CreatedBy
 FROM Roles 
 WHERE Id = @AdminRoleId;
 
 -- Check RolesLocalizations table
 PRINT 'RolesLocalizations table details:';
-SELECT 
-    Id,
-    RoleId,
-    Locale,
-    Name,
-    IsActive,
-    CreatedBy,
-    CreatedAtUtc
+SELECT Id, RoleId, Locale, Name, Description, IsActive, CreatedBy, CreatedAtUtc
 FROM RolesLocalizations 
-WHERE RoleId = @AdminRoleId
-ORDER BY Locale;
+WHERE RoleId = @AdminRoleId;
+
+-- Check Rights table
+PRINT 'Rights table details:';
+SELECT RightId, CreatedBy
+FROM Rights 
+WHERE RightId IN (SELECT RightId FROM @Rights);
 
 -- Check RightsLocalizations table
 PRINT 'RightsLocalizations table details:';
-SELECT 
-    Id,
-    RightId,
-    Locale,
-    Name
+SELECT Id, RightId, Locale, Name, Description
 FROM RightsLocalizations 
+WHERE RightId IN (SELECT RightId FROM @Rights)
 ORDER BY RightId, Locale;
 
 -- Check RolesRights table
 PRINT 'RolesRights table details:';
-SELECT 
-    rr.Id,
-    rr.RoleId,
-    rr.RightId,
-    rl.Name as RightName,
-    rr.CreatedBy,
-    rr.CreatedAtUtc
-FROM RolesRights rr
-JOIN RightsLocalizations rl ON rr.RightId = rl.RightId AND rl.Locale = 'en'
-WHERE rr.RoleId = @AdminRoleId
-ORDER BY rr.RightId;
+SELECT Id, RoleId, RightId, CreatedBy
+FROM RolesRights 
+WHERE RoleId = @AdminRoleId
+ORDER BY RightId;
 
 -- Check UsersRoles table
 PRINT 'UsersRoles table details:';
-SELECT 
-    ur.Id,
-    ur.UserId,
-    ur.RoleId,
-    rl.Name as RoleName,
-    ur.IsActive,
-    ur.CreatedBy,
-    ur.CreatedAtUtc
-FROM UsersRoles ur
-JOIN RolesLocalizations rl ON ur.RoleId = rl.RoleId AND rl.Locale = 'en'
-WHERE ur.UserId = @AdminUserId;
+SELECT Id, UserId, RoleId, IsActive, CreatedBy
+FROM UsersRoles 
+WHERE UserId = @AdminUserId AND RoleId = @AdminRoleId;
 
 -- Final verification summary
+PRINT 'Final verification summary:';
 SELECT 
-    r.Id as RoleId,
-    rl.Name as RoleName,
-    r.IsActive as RoleIsActive,
-    COUNT(DISTINCT rr.RightId) as AssignedRightsCount,
-    STRING_AGG(CAST(rr.RightId as NVARCHAR(10)) + ': ' + rln.Name, '; ') as AssignedRights,
-    COUNT(DISTINCT ur.UserId) as AssignedUsersCount
+    r.Id AS RoleId,
+    rl.Name AS RoleName,
+    STRING_AGG(rloc.Name, '; ') AS RightNames,
+    ur.UserId
 FROM Roles r
-JOIN RolesLocalizations rl ON r.Id = rl.RoleId AND rl.Locale = 'en'
+LEFT JOIN RolesLocalizations rl ON r.Id = rl.RoleId AND rl.Locale = 'en'
 LEFT JOIN RolesRights rr ON r.Id = rr.RoleId
-LEFT JOIN RightsLocalizations rln ON rr.RightId = rln.RightId AND rln.Locale = 'en'
+LEFT JOIN RightsLocalizations rloc ON rr.RightId = rloc.RightId AND rloc.Locale = 'en'
 LEFT JOIN UsersRoles ur ON r.Id = ur.RoleId
 WHERE r.Id = @AdminRoleId
-GROUP BY r.Id, rl.Name, r.IsActive; 
+GROUP BY r.Id, rl.Name, ur.UserId;
