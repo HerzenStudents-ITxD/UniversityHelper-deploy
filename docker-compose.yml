@@ -186,6 +186,31 @@ services:
     networks:
       - default
 
+
+  feedbackservice:
+    platform: linux/amd64
+  #    image: rightsservice
+    container_name: feedbackservice
+    depends_on:
+      - rabbitmq
+      - sqlserver_db
+    build:
+      context: ../UniversityHelper-FeedbackService
+      dockerfile: Dockerfile
+    environment:
+      - VIRTUAL_HOST=sub.domain-example.com
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Host=rabbitmq
+      - RabbitMQ_VirtualHost=/
+      - RabbitMQ_Username=UniversityHelper.FeedbackService
+      - RabbitMQ_Password=1234
+    # ports:
+    #   - 51737:80
+    #   - 44345:443
+    networks:
+      - default    
+
   nginx-proxy:
     platform: linux/amd64
 #    image: jwilder/nginx-proxy
@@ -193,6 +218,7 @@ services:
     depends_on:
       - authservice
       - communityservice
+      - feedbackservice
     build:
       context: ./nginx
       dockerfile: Dockerfile
@@ -201,6 +227,7 @@ services:
       - 81:81
       - 82:82
       - 83:83
+      - 84:84
       - 443:443
 #    volumes:
 #      - /var/run/docker.sock:/tmp/docker.sock:ro
