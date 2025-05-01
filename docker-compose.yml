@@ -186,7 +186,6 @@ services:
     networks:
       - default
 
-
   feedbackservice:
     platform: linux/amd64
   #    image: rightsservice
@@ -211,6 +210,29 @@ services:
     networks:
       - default    
 
+  mapservice:
+#    image: rightsservice
+    container_name: mapservice
+    depends_on:
+      - rabbitmq
+      - sqlserver_db
+    build:
+      context: ../UniversityHelper-MapService
+      dockerfile: Dockerfile
+    environment:
+      - VIRTUAL_HOST=sub.domain-example.com
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - RabbitMQ_Host=rabbitmq
+      - RabbitMQ_VirtualHost=/
+      - RabbitMQ_Username=UniversityHelper.MapService
+      - RabbitMQ_Password=1234
+    # ports:
+    #   - 51737:80
+    #   - 44345:443
+    networks:
+      - default    
+
   nginx-proxy:
     platform: linux/amd64
 #    image: jwilder/nginx-proxy
@@ -219,6 +241,7 @@ services:
       - authservice
       - communityservice
       - feedbackservice
+      - mapservice
     build:
       context: ./nginx
       dockerfile: Dockerfile
