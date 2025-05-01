@@ -4,7 +4,7 @@ setlocal
 REM Variables
 set USER_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db
-set SQL_SCRIPT=sql\00_clean_databases.sql
+set SQL_SCRIPT=sql\UserDb\00_clean_databases.sql
 
 echo Cleaning all databases...
 
