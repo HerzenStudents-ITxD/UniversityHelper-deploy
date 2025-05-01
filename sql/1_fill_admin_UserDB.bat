@@ -18,12 +18,12 @@ del hash.txt
 echo Generated hash: %HASH%
 
 echo Substituting hash into final SQL...
-powershell -Command "(Get-Content './sql/02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content './sql/02_create_admin_credentials.sql'"
+powershell -Command "(Get-Content './UserDb/02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content './UserDb/02_create_admin_credentials.sql'"
 
 echo Copying SQL scripts to container...
-docker cp ./sql/01_create_admin_user.sql %CONTAINER%:/tmp/
-docker cp ./sql/02_create_admin_credentials.sql %CONTAINER%:/tmp/
-docker cp ./sql/04_setup_admin_user_data.sql %CONTAINER%:/tmp/
+docker cp ./UserDb/01_create_admin_user.sql %CONTAINER%:/tmp/
+docker cp ./UserDb/02_create_admin_credentials.sql %CONTAINER%:/tmp/
+docker cp ./UserDb/04_setup_admin_user_data.sql %CONTAINER%:/tmp/
 
 echo Creating admin user...
 docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/01_create_admin_user.sql

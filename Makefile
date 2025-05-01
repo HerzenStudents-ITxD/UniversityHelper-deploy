@@ -1,4 +1,4 @@
-.PHONY: all check-prerequisites check-docker check-github-desktop start-services check-services check-db check-rabbitmq check-auth check-user check-rights check-all
+.PHONY: all check-prerequisites check-docker check-github-desktop start-services check-services check-db check-rabbitmq check-auth check-user check-rights check-community check-feedback check-all
 
 all: check-prerequisites start-services check-services
 
@@ -83,16 +83,20 @@ start-services:
 		chmod +x ./setup.sh && ./setup.sh; \
 	fi
 
-check-services: check-db check-rabbitmq check-auth check-user check-rights
+check-services: check-db check-rabbitmq check-auth check-user check-rights check-community check-feedback
 
 check-db:
-	@echo "Checking database..."
+	@echo "Checking databases..."
 	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		./check_tables/check_UserDB_tables.bat; \
-		./check_tables/check_RightsDB_tables.bat; \
+		./sql/1_fill_admin_UserDB.bat; \
+		./sql/2_fill_admin_RightsDB.bat; \
+		./sql/3_fill_admin_CommunityDB.bat; \
+		./sql/4_fill_FeedbackDB.bat; \
 	else \
-		chmod +x ./check_tables/check_UserDB_tables.sh && ./check_tables/check_UserDB_tables.sh; \
-		chmod +x ./check_tables/check_RightsDB_tables.sh && ./check_tables/check_RightsDB_tables.sh; \
+		chmod +x ./sql/1_fill_admin_UserDB.sh && ./sql/1_fill_admin_UserDB.sh; \
+		chmod +x ./sql/2_fill_admin_RightsDB.sh && ./sql/2_fill_admin_RightsDB.sh; \
+		chmod +x ./sql/3_fill_admin_CommunityDB.sh && ./sql/3_fill_admin_CommunityDB.sh; \
+		chmod +x ./sql/4_fill_FeedbackDB.sh && ./sql/4_fill_FeedbackDB.sh; \
 	fi
 
 check-rabbitmq:
@@ -127,4 +131,20 @@ check-rights:
 		chmod +x ./check_rights.sh && ./check_rights.sh; \
 	fi
 
-check-all: check-services 
+check-community:
+	@echo "Checking CommunityService..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		powershell -ExecutionPolicy Bypass -File ./check_community.ps1; \
+	else \
+		chmod +x ./check_community.sh && ./check_community.sh; \
+	fi
+
+check-feedback:
+	@echo "Checking FeedbackService..."
+	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
+		powershell -ExecutionPolicy Bypass -File ./check_feedback.ps1; \
+	else \
+		chmod +x ./check_feedback.sh && ./check_feedback.sh; \
+	fi
+
+check-all: check-services
