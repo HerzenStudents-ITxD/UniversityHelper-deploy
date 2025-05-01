@@ -211,6 +211,7 @@ services:
       - default    
 
   mapservice:
+    platform: linux/amd64
 #    image: rightsservice
     container_name: mapservice
     depends_on:
@@ -251,6 +252,7 @@ services:
       - 82:82
       - 83:83
       - 84:84
+      - 85:85
       - 443:443
 #    volumes:
 #      - /var/run/docker.sock:/tmp/docker.sock:ro
