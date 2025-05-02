@@ -1,6 +1,6 @@
 @echo off
-chcp 1251 > nul
-setlocal EnableDelayedExpansion
+echo Launching UserDb database fill script...
+echo.
 
 set USER_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db

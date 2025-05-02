@@ -1,6 +1,6 @@
 @echo off
-chcp 1251 > nul
-setlocal EnableDelayedExpansion
+echo Launching all database clean script...
+echo.
 
 REM Variables
 set USER_DB_PASSWORD=User_1234

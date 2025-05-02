@@ -1,6 +1,6 @@
 @echo off
-chcp 1251 > nul
-setlocal EnableDelayedExpansion
+echo Launching RightsDb database fill script...
+echo.
 
 :: Configuration
 set RIGHTS_DB_PASSWORD=User_1234
