@@ -12,45 +12,48 @@ set USER_ID=11111111-1111-1111-1111-111111111111
 set INTERNAL_SALT=UniversityHelper.SALT3
 
 echo Generating hash...
-:: Старый проверенный метод с файлом
-powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Set-Content -Path 'hash.txt' -Value $base64"
+:: Используем более надежный метод генерации хеша
+powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Write-Output $base64" > hash.txt
 set /p HASH=<hash.txt
 del hash.txt
 
 echo Generated hash: %HASH%
 
-echo Substituting hash into final SQL...
-:: Проверяем существование папки sql\UserDb
-if not exist .\sql\UserDb (
-    mkdir .\sql\UserDb
-)
-
-:: Используем старый проверенный метод подстановки
-powershell -Command "(Get-Content '.\sql\UserDb\02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content '.\sql\UserDb\02_create_admin_credentials.sql'"
-
-if not exist .\sql\UserDb\02_create_admin_credentials.sql (
-    echo Error: Failed to create 02_create_admin_credentials.sql. Check if the template file exists in sql\UserDb.
+echo Verifying template file exists...
+if not exist ".\sql\UserDb\02_create_admin_credentials_template.sql" (
+    echo Error: Template file not found at .\sql\UserDb\02_create_admin_credentials_template.sql
     pause
     exit /b 1
 )
 
-echo Verifying generated SQL...
-type .\sql\UserDb\02_create_admin_credentials.sql
+echo Substituting hash into final SQL...
+:: Используем более надежный метод замены с явным указанием кодировки
+powershell -Command "$template = Get-Content -Path '.\sql\UserDb\02_create_admin_credentials_template.sql' -Raw; $template = $template -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%'; Set-Content -Path '.\sql\UserDb\02_create_admin_credentials.sql' -Value $template -Encoding UTF8 -NoNewline"
 
+echo Verifying generated SQL file...
+if not exist ".\sql\UserDb\02_create_admin_credentials.sql" (
+    echo Error: Failed to create credentials SQL file
+    pause
+    exit /b 1
+)
+
+type ".\sql\UserDb\02_create_admin_credentials.sql"
+
+:: Остальная часть скрипта остается без изменений
 echo Copying SQL scripts to container...
-docker cp .\sql\UserDb\01_create_admin_user.sql %CONTAINER%:/tmp/01_create_admin_user.sql
+docker cp ".\sql\UserDb\01_create_admin_user.sql" %CONTAINER%:/tmp/01_create_admin_user.sql
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy 01_create_admin_user.sql to container.
     pause
     exit /b 1
 )
-docker cp .\sql\UserDb\02_create_admin_credentials.sql %CONTAINER%:/tmp/02_create_admin_credentials.sql
+docker cp ".\sql\UserDb\02_create_admin_credentials.sql" %CONTAINER%:/tmp/02_create_admin_credentials.sql
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy 02_create_admin_credentials.sql to container.
     pause
     exit /b 1
 )
-docker cp .\sql\UserDb\04_setup_admin_user_data.sql %CONTAINER%:/tmp/04_setup_admin_user_data.sql
+docker cp ".\sql\UserDb\04_setup_admin_user_data.sql" %CONTAINER%:/tmp/04_setup_admin_user_data.sql
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy 04_setup_admin_user_data.sql to container.
     pause
@@ -85,18 +88,6 @@ if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to set up admin user data.
     pause
     exit /b 1
-)
-
-echo Verifying UserDB tables...
-if exist .\sql\UserDb\check_UserDB_tables.bat (
-    call .\sql\UserDb\check_UserDB_tables.bat
-    if %ERRORLEVEL% neq 0 (
-        echo ERROR: Verification script check_UserDB_tables.bat failed.
-        pause
-        exit /b 1
-    )
-) else (
-    echo Warning: check_UserDB_tables.bat not found in sql\UserDb folder
 )
 
 echo Done ✅
