@@ -50,7 +50,7 @@ DELETE FROM RolesLocalizations WHERE RoleId = '$USER_ID';
 DELETE FROM Roles WHERE Id = '$USER_ID';"
 
 echo -e "\nCopying SQL script to container..."
-docker cp "$PROJECT_ROOT/sql/RightsDb/05_setup_admin_rights.sql" $CONTAINER:/tmp/
+docker cp "$PROJECT_ROOT/RightsDb/05_setup_admin_rights.sql" $CONTAINER:/tmp/
 
 echo "Setting up admin rights..."
 docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -i /tmp/05_setup_admin_rights.sql
