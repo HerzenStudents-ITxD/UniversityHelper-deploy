@@ -1,6 +1,6 @@
 @echo off
 echo Launching RightsDb database fill script...
-echo.
+setlocal enabledelayedexpansion
 
 :: Configuration
 set RIGHTS_DB_PASSWORD=User_1234
@@ -126,12 +126,12 @@ if %ERRORLEVEL% neq 0 (
 
 :: Copy SQL script to container
 echo Copying SQL script to container...
-if not exist .\RightsDb\05_setup_admin_rights.sql (
-    echo ERROR: SQL script .\RightsDb\05_setup_admin_rights.sql not found.
+if not exist .\sql\RightsDb\05_setup_admin_rights.sql (
+    echo ERROR: SQL script .\sql\RightsDb\05_setup_admin_rights.sql not found.
     pause
     exit /b 1
 )
-docker cp .\RightsDb\05_setup_admin_rights.sql %CONTAINER%:/tmp/
+docker cp .\sql\RightsDb\05_setup_admin_rights.sql %CONTAINER%:/tmp/05_setup_admin_rights.sql
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy SQL script to container.
     pause
@@ -216,15 +216,30 @@ if %ERRORLEVEL% neq 0 (
 )
 
 :: Run external verification script if exists
-if exist .\check_tables\check_RightsDB_tables.bat (
+if exist .\sql\RightsDb\check_RightsDB_tables.bat (
     echo Running external verification script...
-    call .\check_tables\check_RightsDB_tables.bat
+    call .\sql\RightsDb\check_RightsDB_tables.bat
     if %ERRORLEVEL% neq 0 (
         echo ERROR: External verification script failed.
+        pause
+        exit /b 1
     )
 ) else (
-    echo WARNING: External verification script .\check_tables\check_RightsDB_tables.bat not found.
+    echo WARNING: External verification script .\sql\RightsDb\check_RightsDB_tables.bat not found.
+    :: Uncomment the following line if check_RightsDB_tables.bat is in check_tables folder
+    :: if exist .\check_tables\check_RightsDB_tables.bat (
+    ::     echo Running external verification script...
+    ::     call .\check_tables\check_RightsDB_tables.bat
+    ::     if %ERRORLEVEL% neq 0 (
+    ::         echo ERROR: External verification script failed.
+    ::         pause
+    ::         exit /b 1
+    ::     )
+    :: ) else (
+    ::     echo WARNING: External verification script .\check_tables\check_RightsDB_tables.bat not found.
+    :: )
 )
 
 echo Done ✅
+pause
 exit /b 0
