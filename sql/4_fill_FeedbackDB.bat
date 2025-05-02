@@ -38,19 +38,20 @@ if exist .\sql\FeedbackDb\check_FeedbackDB_tables.bat (
     )
 ) else (
     echo WARNING: Verification script .\sql\FeedbackDb\check_FeedbackDB_tables.bat not found.
-    :: Uncomment the following block if check_FeedbackDB_tables.bat is in check_tables folder
-    :: if exist .\check_tables\check_FeedbackDB_tables.bat (
-    ::     echo Running verification script...
-    ::     call .\check_tables\check_FeedbackDB_tables.bat
-    ::     if %ERRORLEVEL% neq 0 (
-    ::         echo ERROR: Verification script check_FeedbackDB_tables.bat failed.
-    ::         pause
-    ::         exit /b 1
-    ::     )
-    :: ) else (
-    ::     echo WARNING: Verification script .\check_tables\check_FeedbackDB_tables.bat not found.
-    :: )
 )
+
+:: Note: If check_FeedbackDB_tables.bat is in check_tables folder, replace the above block with:
+:: if exist .\check_tables\check_FeedbackDB_tables.bat (
+::     echo Running verification script...
+::     call .\check_tables\check_FeedbackDB_tables.bat
+::     if %ERRORLEVEL% neq 0 (
+::         echo ERROR: Verification script check_FeedbackDB_tables.bat failed.
+::         pause
+::         exit /b 1
+::     )
+:: ) else (
+::     echo WARNING: Verification script .\check_tables\check_FeedbackDB_tables.bat not found.
+:: )
 
 echo Done ✅
 pause
