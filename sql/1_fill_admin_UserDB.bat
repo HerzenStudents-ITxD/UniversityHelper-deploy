@@ -9,17 +9,14 @@ set LOGIN=adminlogin
 set PASSWORD=Admin_1234
 set SALT=Random_Salt
 set USER_ID=11111111-1111-1111-1111-111111111111
-set INTERNAL_SALT=UniversityHelper.SALT3
 
 echo Generating hash...
-powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Set-Content -Path 'hash.txt' -Value $base64 -Encoding UTF8"
-if not exist hash.txt (
-    echo Error: Failed to generate hash.txt. Ensure PowerShell is installed and accessible.
+for /f "usebackq delims=" %%i in (`powershell -Command "$Text = '%LOGIN%%SALT%%PASSWORD%'; $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Text); $Hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash($Bytes); [Convert]::ToBase64String($Hash)"`) do set HASH=%%i
+if not defined HASH (
+    echo Error: Failed to generate hash. Ensure PowerShell is installed and accessible.
     pause
     exit /b 1
 )
-set /p HASH=<hash.txt
-del hash.txt
 
 echo Generated hash: %HASH%
 
@@ -31,10 +28,7 @@ echo HASH variable content: "%HASH%"
 echo Verifying template file content...
 type .\sql\UserDb\02_create_admin_credentials_template.sql
 
-:: Write HASH to a temporary file to avoid escaping issues
-echo %HASH%> hash_temp.txt
-powershell -Command "$hash = Get-Content -Path 'hash_temp.txt' -Encoding UTF8; (Get-Content '.\sql\UserDb\02_create_admin_credentials_template.sql' -Raw -Encoding UTF8) -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', $hash | Set-Content '.\sql\UserDb\02_create_admin_credentials.sql' -Encoding UTF8"
-del hash_temp.txt
+powershell -Command "(Get-Content '.\sql\UserDb\02_create_admin_credentials_template.sql' -Raw -Encoding UTF8) -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content '.\sql\UserDb\02_create_admin_credentials.sql' -Encoding UTF8"
 
 if not exist .\sql\UserDb\02_create_admin_credentials.sql (
     echo Error: Failed to create 02_create_admin_credentials.sql. Check if the template file exists in sql\UserDb.
