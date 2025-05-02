@@ -11,17 +11,11 @@ set SALT=Random_Salt
 set USER_ID=11111111-1111-1111-1111-111111111111
 set INTERNAL_SALT=UniversityHelper.SALT3
 
-echo Checking for PowerShell...
-where powershell >nul 2>&1
-if %ERRORLEVEL% neq 0 (
-    echo Error: PowerShell is not installed or not found in PATH. Please install PowerShell or add it to PATH.
-    exit /b 1
-)
-
 echo Generating hash...
 powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Set-Content -Path 'hash.txt' -Value $base64"
 if not exist hash.txt (
-    echo Error: Failed to generate hash.txt
+    echo Error: Failed to generate hash.txt. Ensure PowerShell is installed and accessible.
+    pause
     exit /b 1
 )
 set /p HASH=<hash.txt
@@ -30,9 +24,10 @@ del hash.txt
 echo Generated hash: %HASH%
 
 echo Substituting hash into final SQL...
-powershell -Command "(Get-Content './UserDb/02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content './UserDb/02_create_admin_credentials.sql'"
+powershell -Command "(Get-Content '.\UserDb\02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content '.\UserDb\02_create_admin_credentials.sql'"
 if not exist .\UserDb\02_create_admin_credentials.sql (
-    echo Error: Failed to create 02_create_admin_credentials.sql
+    echo Error: Failed to create 02_create_admin_credentials.sql. Check if the template file exists.
+    pause
     exit /b 1
 )
 
@@ -56,6 +51,7 @@ if exist .\UserDb\check_UserDB_tables.bat (
     call .\UserDb\check_UserDB_tables.bat
 ) else (
     echo Error: check_UserDB_tables.bat not found in UserDb folder
+    pause
     exit /b 1
 )
 
