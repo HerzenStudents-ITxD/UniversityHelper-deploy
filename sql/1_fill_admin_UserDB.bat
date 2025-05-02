@@ -1,4 +1,5 @@
 @echo off
+echo Launching UserDb database fill script...
 setlocal enabledelayedexpansion
 
 set USER_DB_PASSWORD=User_1234
@@ -11,43 +12,47 @@ set USER_ID=11111111-1111-1111-1111-111111111111
 set INTERNAL_SALT=UniversityHelper.SALT3
 
 echo Generating hash...
-powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Set-Content -Path 'hash.txt' -Value $base64 -Encoding UTF8"
+:: Старый проверенный метод с файлом
+powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Set-Content -Path 'hash.txt' -Value $base64"
 set /p HASH=<hash.txt
 del hash.txt
 
 echo Generated hash: %HASH%
 
 echo Substituting hash into final SQL...
-powershell -Command "[System.IO.File]::WriteAllText('.\sql\02_create_admin_credentials.sql', ([System.IO.File]::ReadAllText('.\sql\02_create_admin_credentials_template.sql', [System.Text.Encoding]::UTF8).Replace('СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%')), [System.Text.Encoding]::UTF8)"
+:: Проверяем существование папки sql\UserDb
+if not exist .\sql\UserDb (
+    mkdir .\sql\UserDb
+)
 
-echo Verifying generated SQL file...
-type ".\sql\02_create_admin_credentials.sql"
+:: Используем старый проверенный метод подстановки
+powershell -Command "(Get-Content '.\sql\UserDb\02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content '.\sql\UserDb\02_create_admin_credentials.sql'"
+
+if not exist .\sql\UserDb\02_create_admin_credentials.sql (
+    echo Error: Failed to create 02_create_admin_credentials.sql. Check if the template file exists in sql\UserDb.
+    pause
+    exit /b 1
+)
+
+echo Verifying generated SQL...
+type .\sql\UserDb\02_create_admin_credentials.sql
 
 echo Copying SQL scripts to container...
-docker cp ".\sql\01_create_admin_user.sql" %CONTAINER%:/tmp/
+docker cp .\sql\UserDb\01_create_admin_user.sql %CONTAINER%:/tmp/01_create_admin_user.sql
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to copy 01_create_admin_user.sql
+    echo ERROR: Failed to copy 01_create_admin_user.sql to container.
     pause
     exit /b 1
 )
-
-docker cp ".\sql\02_create_admin_credentials.sql" %CONTAINER%:/tmp/
+docker cp .\sql\UserDb\02_create_admin_credentials.sql %CONTAINER%:/tmp/02_create_admin_credentials.sql
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to copy 02_create_admin_credentials.sql
+    echo ERROR: Failed to copy 02_create_admin_credentials.sql to container.
     pause
     exit /b 1
 )
-
-docker cp ".\sql\04_setup_admin_rights.sql" %CONTAINER%:/tmp/
+docker cp .\sql\UserDb\04_setup_admin_user_data.sql %CONTAINER%:/tmp/04_setup_admin_user_data.sql
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to copy 04_setup_admin_rights.sql
-    pause
-    exit /b 1
-)
-
-docker cp ".\sql\05_setup_admin_user_data.sql" %CONTAINER%:/tmp/
-if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to copy 05_setup_admin_user_data.sql
+    echo ERROR: Failed to copy 04_setup_admin_user_data.sql to container.
     pause
     exit /b 1
 )
@@ -55,7 +60,7 @@ if %ERRORLEVEL% neq 0 (
 echo Creating admin user...
 docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/01_create_admin_user.sql
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to create admin user
+    echo ERROR: Failed to create admin user.
     pause
     exit /b 1
 )
@@ -63,37 +68,35 @@ if %ERRORLEVEL% neq 0 (
 echo Creating admin credentials...
 docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/02_create_admin_credentials.sql
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to create admin credentials
-    pause
-    exit /b 1
-)
-
-echo Setting up admin rights...
-docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/04_setup_admin_rights.sql
-if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to setup admin rights
+    echo ERROR: Failed to create admin credentials.
     pause
     exit /b 1
 )
 
 echo Setting up admin user data...
-docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/05_setup_admin_user_data.sql
+docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -Q "USE %DATABASE%; DELETE FROM UsersAdditions WHERE UserId = '%USER_ID%'; DELETE FROM UsersCommunications WHERE UserId = '%USER_ID%';"
 if %ERRORLEVEL% neq 0 (
-    echo ERROR: Failed to setup admin user data
+    echo ERROR: Failed to clean up existing user data.
+    pause
+    exit /b 1
+)
+docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/04_setup_admin_user_data.sql
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Failed to set up admin user data.
     pause
     exit /b 1
 )
 
 echo Verifying UserDB tables...
-if exist ".\check_tables\check_UserDB_tables.bat" (
-    call ".\check_tables\check_UserDB_tables.bat"
+if exist .\sql\UserDb\check_UserDB_tables.bat (
+    call .\sql\UserDb\check_UserDB_tables.bat
     if %ERRORLEVEL% neq 0 (
-        echo ERROR: Verification failed
+        echo ERROR: Verification script check_UserDB_tables.bat failed.
         pause
         exit /b 1
     )
 ) else (
-    echo WARNING: check_UserDB_tables.bat not found
+    echo Warning: check_UserDB_tables.bat not found in sql\UserDb folder
 )
 
 echo Done ✅
