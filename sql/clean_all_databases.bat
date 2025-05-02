@@ -1,5 +1,6 @@
 @echo off
-setlocal
+chcp 1251 > nul
+setlocal EnableDelayedExpansion
 
 REM Variables
 set USER_DB_PASSWORD=User_1234

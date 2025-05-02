@@ -1,4 +1,5 @@
 @echo off
+chcp 1251 > nul
 setlocal EnableDelayedExpansion
 
 :: Configuration

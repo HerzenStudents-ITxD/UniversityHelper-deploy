@@ -1,5 +1,6 @@
 @echo off
-setlocal enabledelayedexpansion
+chcp 1251 > nul
+setlocal EnableDelayedExpansion
 
 set USER_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db
