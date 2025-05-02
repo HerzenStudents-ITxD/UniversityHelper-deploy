@@ -12,17 +12,13 @@ set USER_ID=11111111-1111-1111-1111-111111111111
 set INTERNAL_SALT=UniversityHelper.SALT3
 
 :: Проверяем, что контейнер запущен
-echo Checking if container %CONTAINER% is running...
-docker ps | findstr %CONTAINER% >nul
-if %errorlevel% neq 0 (
-    echo [Error] Container %CONTAINER% is not running. Please start it first.
-    pause
-    exit /b 1
-)
-
-:: Создаем базу данных, если она не существует
-echo Creating UserDB database if not exists...
-docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -Q "IF NOT EXISTS (SELECT * FROM sys.databases WHERE name = '%DATABASE%') CREATE DATABASE %DATABASE%;"
+@REM echo Checking if container %CONTAINER% is running...
+@REM docker ps | findstr %CONTAINER% >nul
+@REM if %errorlevel% neq 0 (
+@REM     echo [Error] Container %CONTAINER% is not running. Please start it first.
+@REM     pause
+@REM     exit /b 1
+@REM )
 
 :: Проверяем доступность PowerShell
 echo Checking PowerShell availability...
