@@ -79,13 +79,6 @@
             "read": ".*"
         },
         {
-            "user": "guest",
-            "vhost": "/",
-            "configure": ".*",
-            "write": ".*",
-            "read": ".*"
-        },
-        {
             "user": "UniversityHelper.FeedbackService",
             "vhost": "/",
             "configure": ".*",
@@ -95,6 +88,13 @@
         {
             "user": "UniversityHelper.MapService",
             "vhost": "\/",
+            "configure": ".*",
+            "write": ".*",
+            "read": ".*"
+        },
+        {
+            "user": "guest",
+            "vhost": "/",
             "configure": ".*",
             "write": ".*",
             "read": ".*"

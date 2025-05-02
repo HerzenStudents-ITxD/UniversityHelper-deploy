@@ -188,7 +188,7 @@ services:
 
   feedbackservice:
     platform: linux/amd64
-  #    image: rightsservice
+#    image: rightsservice
     container_name: feedbackservice
     depends_on:
       - rabbitmq
@@ -204,11 +204,10 @@ services:
       - RabbitMQ_VirtualHost=/
       - RabbitMQ_Username=UniversityHelper.FeedbackService
       - RabbitMQ_Password=1234
-    # ports:
     #   - 51737:80
     #   - 44345:443
     networks:
-      - default    
+      - default
 
   mapservice:
     platform: linux/amd64
