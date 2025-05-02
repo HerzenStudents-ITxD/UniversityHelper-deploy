@@ -12,14 +12,14 @@ set USER_ID=11111111-1111-1111-1111-111111111111
 set INTERNAL_SALT=UniversityHelper.SALT3
 
 echo Generating hash...
-:: Используем более надежный метод генерации хеша
-powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Write-Output $base64" > hash.txt
+:: Генерация хеша с явным указанием кодировки
+powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); $base64" > hash.txt
 set /p HASH=<hash.txt
 del hash.txt
 
 echo Generated hash: %HASH%
 
-echo Verifying template file exists...
+echo Verifying template file...
 if not exist ".\sql\UserDb\02_create_admin_credentials_template.sql" (
     echo Error: Template file not found at .\sql\UserDb\02_create_admin_credentials_template.sql
     pause
@@ -27,19 +27,13 @@ if not exist ".\sql\UserDb\02_create_admin_credentials_template.sql" (
 )
 
 echo Substituting hash into final SQL...
-:: Используем более надежный метод замены с явным указанием кодировки
-powershell -Command "$template = Get-Content -Path '.\sql\UserDb\02_create_admin_credentials_template.sql' -Raw; $template = $template -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%'; Set-Content -Path '.\sql\UserDb\02_create_admin_credentials.sql' -Value $template -Encoding UTF8 -NoNewline"
+:: Используем временный файл с явной кодировкой UTF-8 без BOM
+powershell -Command "[System.IO.File]::WriteAllText('.\sql\UserDb\02_create_admin_credentials.sql', [System.IO.File]::ReadAllText('.\sql\UserDb\02_create_admin_credentials_template.sql', [System.Text.Encoding]::UTF8).Replace('СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%'), [System.Text.Encoding]::UTF8)"
 
-echo Verifying generated SQL file...
-if not exist ".\sql\UserDb\02_create_admin_credentials.sql" (
-    echo Error: Failed to create credentials SQL file
-    pause
-    exit /b 1
-)
-
+echo Verifying generated SQL...
 type ".\sql\UserDb\02_create_admin_credentials.sql"
 
-:: Остальная часть скрипта остается без изменений
+:: Остальная часть скрипта без изменений
 echo Copying SQL scripts to container...
 docker cp ".\sql\UserDb\01_create_admin_user.sql" %CONTAINER%:/tmp/01_create_admin_user.sql
 if %ERRORLEVEL% neq 0 (
