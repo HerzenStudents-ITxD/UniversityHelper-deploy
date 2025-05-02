@@ -5,7 +5,9 @@ setlocal enabledelayedexpansion
 REM Variables
 set USER_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db
-set SQL_SCRIPT=UserDb\00_clean_databases.sql
+
+REM Get the directory where this script is located
+set "SCRIPT_DIR=%~dp0"
 
 echo Cleaning all databases...
 
@@ -20,12 +22,43 @@ if %errorlevel% neq 0 (
 )
 echo SQL Server is ready!
 
+REM Execute clean scripts for each database
+call :execute_clean_script "UserDb\00_clean_UserDb.sql"
+call :execute_clean_script "CommunityDb\00_clean_CommunityDb.sql"
+call :execute_clean_script "RightsDb\00_clean_RightsDb.sql"
+call :execute_clean_script "FeedbackDb\00_clean_FeedbackDb.sql"
+call :execute_clean_script "MapDb\00_clean_MapDb.sql"
+
+echo All databases cleaning completed! ✅
+pause
+exit /b 0
+
+:execute_clean_script
+set "SQL_SCRIPT=%SCRIPT_DIR%%~1"
+
+REM Verify SQL script exists
+if not exist "%SQL_SCRIPT%" (
+    echo Error: Clean script not found at: %SQL_SCRIPT%
+    exit /b 1
+)
+
+echo Processing %~1...
+
 REM Copy SQL script to container
-echo Copying SQL script to container...
-docker cp %SQL_SCRIPT% %CONTAINER%:/clean_databases.sql
+docker cp "%SQL_SCRIPT%" %CONTAINER%:/temp_clean_script.sql
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Failed to copy SQL script to container
+    exit /b 1
+)
 
 REM Execute SQL script
-echo Executing SQL script...
-docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -i /clean_databases.sql
+docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -i /temp_clean_script.sql
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Failed to execute clean script
+    exit /b 1
+)
 
-echo Database cleaning completed! ✅
+REM Clean up
+docker exec %CONTAINER% rm -f /temp_clean_script.sql
+
+exit /b 0
