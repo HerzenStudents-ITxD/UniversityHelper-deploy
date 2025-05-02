@@ -24,17 +24,17 @@ del hash.txt
 echo Generated hash: %HASH%
 
 echo Substituting hash into final SQL...
-powershell -Command "(Get-Content '.\UserDb\02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content '.\UserDb\02_create_admin_credentials.sql'"
-if not exist .\UserDb\02_create_admin_credentials.sql (
-    echo Error: Failed to create 02_create_admin_credentials.sql. Check if the template file exists.
+powershell -Command "(Get-Content '.\sql\UserDb\02_create_admin_credentials_template.sql') -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '%HASH%' | Set-Content '.\sql\UserDb\02_create_admin_credentials.sql'"
+if not exist .\sql\UserDb\02_create_admin_credentials.sql (
+    echo Error: Failed to create 02_create_admin_credentials.sql. Check if the template file exists in sql\UserDb.
     pause
     exit /b 1
 )
 
 echo Copying SQL scripts to container...
-docker cp .\UserDb\01_create_admin_user.sql %CONTAINER%:/tmp/01_create_admin_user.sql
-docker cp .\UserDb\02_create_admin_credentials.sql %CONTAINER%:/tmp/02_create_admin_credentials.sql
-docker cp .\UserDb\04_setup_admin_user_data.sql %CONTAINER%:/tmp/04_setup_admin_user_data.sql
+docker cp .\sql\UserDb\01_create_admin_user.sql %CONTAINER%:/tmp/01_create_admin_user.sql
+docker cp .\sql\UserDb\02_create_admin_credentials.sql %CONTAINER%:/tmp/02_create_admin_credentials.sql
+docker cp .\sql\UserDb\04_setup_admin_user_data.sql %CONTAINER%:/tmp/04_setup_admin_user_data.sql
 
 echo Creating admin user...
 docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/01_create_admin_user.sql
@@ -47,10 +47,10 @@ docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %U
 docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/04_setup_admin_user_data.sql
 
 echo Verifying UserDB tables...
-if exist .\UserDb\check_UserDB_tables.bat (
-    call .\UserDb\check_UserDB_tables.bat
+if exist .\sql\UserDb\check_UserDB_tables.bat (
+    call .\sql\UserDb\check_UserDB_tables.bat
 ) else (
-    echo Error: check_UserDB_tables.bat not found in UserDb folder
+    echo Error: check_UserDB_tables.bat not found in sql\UserDb folder
     pause
     exit /b 1
 )
