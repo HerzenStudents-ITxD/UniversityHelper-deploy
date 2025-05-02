@@ -1,6 +1,6 @@
 @echo off
 echo Launching all database fill scripts...
-echo.
+setlocal enabledelayedexpansion
 
 :: Get the directory where this script is located
 set "SCRIPT_DIR=%~dp0"

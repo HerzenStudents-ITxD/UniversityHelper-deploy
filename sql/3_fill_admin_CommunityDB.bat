@@ -1,6 +1,6 @@
 @echo off
 echo Launching CommunityDb database fill script...
-echo.
+setlocal enabledelayedexpansion
 
 set USER_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db

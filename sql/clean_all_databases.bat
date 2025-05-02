@@ -1,6 +1,6 @@
 @echo off
 echo Launching all database clean script...
-echo.
+setlocal enabledelayedexpansion
 
 REM Variables
 set USER_DB_PASSWORD=User_1234
