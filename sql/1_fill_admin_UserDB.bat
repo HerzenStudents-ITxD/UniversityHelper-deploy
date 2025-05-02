@@ -9,9 +9,10 @@ set LOGIN=adminlogin
 set PASSWORD=Admin_1234
 set SALT=Random_Salt
 set USER_ID=11111111-1111-1111-1111-111111111111
+set INTERNAL_SALT=UniversityHelper.SALT3
 
 echo Generating hash...
-for /f "usebackq delims=" %%i in (`powershell -Command "$Text = '%LOGIN%%SALT%%PASSWORD%'; $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Text); $Hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash($Bytes); [Convert]::ToBase64String($Hash)"`) do set HASH=%%i
+for /f "usebackq delims=" %%i in (`powershell -Command "$Text = '%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%'; $Bytes = [System.Text.Encoding]::UTF8.GetBytes($Text); $Hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash($Bytes); [Convert]::ToBase64String($Hash)"`) do set HASH=%%i
 if not defined HASH (
     echo Error: Failed to generate hash. Ensure PowerShell is installed and accessible.
     pause
