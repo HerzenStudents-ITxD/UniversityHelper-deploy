@@ -15,7 +15,7 @@ docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_
 
 echo.
 echo Copying SQL script to container...
-docker cp ./sql/CommunityDb/06_setup_community_data.sql %CONTAINER%:/tmp/
+docker cp ./CommunityDb/06_setup_community_data.sql %CONTAINER%:/tmp/
 
 echo Executing SQL script...
 docker exec %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/06_setup_community_data.sql
@@ -25,4 +25,3 @@ echo Verifying CommunityDB tables...
 call .\check_tables\check_CommunityDB_tables.bat
 
 echo Done ✅
-pause 

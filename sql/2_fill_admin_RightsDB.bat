@@ -125,12 +125,12 @@ if %ERRORLEVEL% neq 0 (
 
 :: Copy SQL script to container
 echo Copying SQL script to container...
-if not exist .\sql\RightsDb\05_setup_admin_rights.sql (
-    echo ERROR: SQL script .\sql\RightsDb\05_setup_admin_rights.sql not found.
+if not exist .\RightsDb\05_setup_admin_rights.sql (
+    echo ERROR: SQL script .\RightsDb\05_setup_admin_rights.sql not found.
     pause
     exit /b 1
 )
-docker cp .\sql\RightsDb\05_setup_admin_rights.sql %CONTAINER%:/tmp/
+docker cp .\RightsDb\05_setup_admin_rights.sql %CONTAINER%:/tmp/
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy SQL script to container.
     pause
@@ -226,5 +226,4 @@ if exist .\check_tables\check_RightsDB_tables.bat (
 )
 
 echo Done ✅
-pause
 exit /b 0
