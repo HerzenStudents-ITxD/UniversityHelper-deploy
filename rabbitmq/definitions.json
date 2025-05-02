@@ -87,7 +87,7 @@
         },
         {
             "user": "UniversityHelper.MapService",
-            "vhost": "\/",
+            "vhost": "/",
             "configure": ".*",
             "write": ".*",
             "read": ".*"
