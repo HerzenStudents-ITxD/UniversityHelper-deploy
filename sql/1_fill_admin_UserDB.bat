@@ -12,7 +12,7 @@ set USER_ID=11111111-1111-1111-1111-111111111111
 set INTERNAL_SALT=UniversityHelper.SALT3
 
 echo Generating hash...
-powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Set-Content -Path 'hash.txt' -Value $base64"
+powershell -Command "$hash = [System.Security.Cryptography.SHA512]::Create().ComputeHash([System.Text.Encoding]::UTF8.GetBytes('%SALT%%LOGIN%%PASSWORD%%INTERNAL_SALT%')); $base64 = [Convert]::ToBase64String($hash); Set-Content -Path 'hash.txt' -Value $base64 -Encoding UTF8"
 if not exist hash.txt (
     echo Error: Failed to generate hash.txt. Ensure PowerShell is installed and accessible.
     pause
@@ -27,20 +27,22 @@ echo Substituting hash into final SQL...
 :: Debug: Verify HASH variable
 echo HASH variable content: "%HASH%"
 
-:: Escape special characters in HASH for PowerShell
-set "ESCAPED_HASH=%HASH%"
-set "ESCAPED_HASH=!ESCAPED_HASH:+=+!"
-set "ESCAPED_HASH=!ESCAPED_HASH:/=\/!"
-set "ESCAPED_HASH=!ESCAPED_HASH:==\=!"
+:: Debug: Verify template file content
+echo Verifying template file content...
+type .\sql\UserDb\02_create_admin_credentials_template.sql
 
-powershell -Command "(Get-Content '.\sql\UserDb\02_create_admin_credentials_template.sql' -Raw) -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', '!ESCAPED_HASH!' | Set-Content '.\sql\UserDb\02_create_admin_credentials.sql' -Encoding UTF8"
+:: Write HASH to a temporary file to avoid escaping issues
+echo %HASH%> hash_temp.txt
+powershell -Command "$hash = Get-Content -Path 'hash_temp.txt' -Encoding UTF8; (Get-Content '.\sql\UserDb\02_create_admin_credentials_template.sql' -Raw -Encoding UTF8) -replace 'СЮДА_ТВОЙ_BASE64_ХЕШ', $hash | Set-Content '.\sql\UserDb\02_create_admin_credentials.sql' -Encoding UTF8"
+del hash_temp.txt
+
 if not exist .\sql\UserDb\02_create_admin_credentials.sql (
     echo Error: Failed to create 02_create_admin_credentials.sql. Check if the template file exists in sql\UserDb.
     pause
     exit /b 1
 )
 
-:: Debug: Verify content of 02_create_admin_credentials.sql
+:: Debug: Verify generated 02_create_admin_credentials.sql
 echo Verifying generated 02_create_admin_credentials.sql...
 type .\sql\UserDb\02_create_admin_credentials.sql
 
