@@ -5,7 +5,7 @@ Write-Host "Запуск скрипта заполнения базы данны
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path $scriptDir ".env"
 if (-not (Test-Path $envFile)) {
-    Write-Error "ОШИБКА: Файл .env не найден по пути $envFile"
+    Write-Error "ОШИБКА: Файл .env не найден по пути ${envFile}"
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
@@ -26,7 +26,7 @@ $adminRoleId = $env:RIGHTSDB_ADMIN_ROLE_ID
 $requiredVars = @("DB_CONTAINER", "SA_PASSWORD", "RIGHTSDB_DB_NAME", "RIGHTSDB_ADMIN_USER_ID", "RIGHTSDB_ADMIN_ROLE_ID")
 foreach ($var in $requiredVars) {
     if (-not [System.Environment]::GetEnvironmentVariable($var)) {
-        Write-Error "ОШИБКА: Переменная окружения $var не установлена."
+        Write-Error "ОШИБКА: Переменная окружения ${var} не установлена."
         Read-Host "Нажмите Enter для продолжения..."
         exit 1
     }
@@ -34,7 +34,7 @@ foreach ($var in $requiredVars) {
 
 # Проверка, что имя базы данных корректно
 if ($database -ne "RightsDB") {
-    Write-Error "ОШИБКА: Имя базы данных ($database) не соответствует ожидаемому 'RightsDB'."
+    Write-Error "ОШИБКА: Имя базы данных (${database}) не соответствует ожидаемому 'RightsDB'."
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
@@ -47,10 +47,10 @@ if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
 }
 
 # Проверка, что контейнер запущен
-Write-Host "Проверка, запущен ли контейнер $container..."
+Write-Host "Проверка, запущен ли контейнер ${container}..."
 $containerStatus = docker inspect $container 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "ОШИБКА: Контейнер $container не запущен."
+    Write-Error "ОШИБКА: Контейнер ${container} не запущен."
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
@@ -58,11 +58,11 @@ if ($LASTEXITCODE -ne 0) {
 # Функция для выполнения SQL-команд
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
-    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$password' -d $Database -Q `"$Query`" -s','"
-    Write-Host "Выполнение SQL: $Query"
+    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s','"
+    Write-Host "Выполнение SQL: ${Query}"
     $result = docker exec -it $container bash -c $sqlcmd 2>&1
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "ОШИБКА: Не удалось выполнить SQL-команду. Подробности: $result"
+        Write-Error "ОШИБКА: Не удалось выполнить SQL-команду. Подробности: ${result}"
         return $false
     }
     return $result
@@ -77,18 +77,18 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
 }
 
 # Проверка существования базы данных
-Write-Host "Проверка существования базы данных $database..."
-$checkDbQuery = "IF DB_ID('$database') IS NOT NULL SELECT 1 AS DbExists ELSE SELECT 0 AS DbExists"
+Write-Host "Проверка существования базы данных ${database}..."
+$checkDbQuery = "IF DB_ID('${database}') IS NOT NULL SELECT 1 AS DbExists ELSE SELECT 0 AS DbExists"
 $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
 if ($dbExists -notmatch "1") {
-    Write-Error "ОШИБКА: База данных $database не существует."
+    Write-Error "ОШИБКА: База данных ${database} не существует."
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
 
 # Проверка существующих таблиц
-Write-Host "Проверка существующих таблиц в базе $database..."
-$checkTablesQuery = "USE $database; SELECT 'Roles' AS TableName, COUNT(*) AS Count FROM sys.tables WHERE name = 'Roles' UNION ALL SELECT 'RolesLocalizations', COUNT(*) FROM sys.tables WHERE name = 'RolesLocalizations' UNION ALL SELECT 'Rights', COUNT(*) FROM sys.tables WHERE name = 'Rights' UNION ALL SELECT 'RightsLocalizations', COUNT(*) FROM sys.tables WHERE name = 'RightsLocalizations' UNION ALL SELECT 'RolesRights', COUNT(*) FROM sys.tables WHERE name = 'RolesRights' UNION ALL SELECT 'UsersRoles', COUNT(*) FROM sys.tables WHERE name = 'UsersRoles';"
+Write-Host "Проверка существующих таблиц в базе ${database}..."
+$checkTablesQuery = "USE ${database}; SELECT 'Roles' AS TableName, COUNT(*) AS Count FROM sys.tables WHERE name = 'Roles' UNION ALL SELECT 'RolesLocalizations', COUNT(*) FROM sys.tables WHERE name = 'RolesLocalizations' UNION ALL SELECT 'Rights', COUNT(*) FROM sys.tables WHERE name = 'Rights' UNION ALL SELECT 'RightsLocalizations', COUNT(*) FROM sys.tables WHERE name = 'RightsLocalizations' UNION ALL SELECT 'RolesRights', COUNT(*) FROM sys.tables WHERE name = 'RolesRights' UNION ALL SELECT 'UsersRoles', COUNT(*) FROM sys.tables WHERE name = 'UsersRoles';"
 if (-not (Invoke-SqlCmd $checkTablesQuery)) {
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
@@ -96,7 +96,7 @@ if (-not (Invoke-SqlCmd $checkTablesQuery)) {
 
 # Проверка структуры таблиц
 Write-Host "Проверка структуры таблиц..."
-$checkStructureQuery = "USE $database; SELECT TABLE_NAME, COLUMN_NAME, IS_NULLABLE, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME IN ('Roles', 'RolesLocalizations', 'Rights', 'RightsLocalizations', 'RolesRights', 'UsersRoles') ORDER BY TABLE_NAME, ORDINAL_POSITION;"
+$checkStructureQuery = "USE ${database}; SELECT TABLE_NAME, COLUMN_NAME, IS_NULLABLE, DATA_TYPE FROM INFORMATION_SCHEMA.COLUMNS WHERE TABLE_NAME IN ('Roles', 'RolesLocalizations', 'Rights', 'RightsLocalizations', 'RolesRights', 'UsersRoles') ORDER BY TABLE_NAME, ORDINAL_POSITION;"
 if (-not (Invoke-SqlCmd $checkStructureQuery)) {
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
@@ -105,7 +105,7 @@ if (-not (Invoke-SqlCmd $checkStructureQuery)) {
 # Создание таблиц, если они не существуют
 Write-Host "Создание таблиц, если они не существуют..."
 $createTablesQuery = @"
-USE $database;
+USE ${database};
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Rights')
     CREATE TABLE Rights (RightId int PRIMARY KEY, CreatedBy uniqueidentifier NOT NULL);
 IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Roles')
@@ -127,23 +127,23 @@ if (-not (Invoke-SqlCmd $createTablesQuery)) {
 # Вывод текущего содержимого таблиц
 $tables = @("Rights", "Roles", "RolesLocalizations", "RightsLocalizations", "RolesRights", "UsersRoles")
 foreach ($table in $tables) {
-    Write-Host "Таблица $table:"
-    $query = "USE $database; IF OBJECT_ID('$table') IS NOT NULL SELECT * FROM $table;"
+    Write-Host "Таблица ${table}:"
+    $query = "USE ${database}; IF OBJECT_ID('${table}') IS NOT NULL SELECT * FROM ${table};"
     if (-not (Invoke-SqlCmd $query)) {
-        Write-Error "ОШИБКА: Не удалось вывести таблицу $table."
+        Write-Error "ОШИБКА: Не удалось вывести таблицу ${table}."
     }
 }
 
 # Очистка существующих данных
 Write-Host "Очистка существующих данных..."
 $cleanupQuery = @"
-USE $database;
-IF OBJECT_ID('UsersRoles') IS NOT NULL DELETE FROM UsersRoles WHERE RoleId = '$adminRoleId';
-IF OBJECT_ID('RolesRights') IS NOT NULL DELETE FROM RolesRights WHERE RoleId = '$adminRoleId';
-IF OBJECT_ID('RolesLocalizations') IS NOT NULL DELETE FROM RolesLocalizations WHERE RoleId = '$adminRoleId';
-IF OBJECT_ID('Roles') IS NOT NULL DELETE FROM Roles WHERE Id = '$adminRoleId';
-IF OBJECT_ID('RightsLocalizations') IS NOT NULL DELETE FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM Rights WHERE CreatedBy = '$adminUserId');
-IF OBJECT_ID('Rights') IS NOT NULL DELETE FROM Rights WHERE CreatedBy = '$adminUserId';
+USE ${database};
+IF OBJECT_ID('UsersRoles') IS NOT NULL DELETE FROM UsersRoles WHERE RoleId = '${adminRoleId}';
+IF OBJECT_ID('RolesRights') IS NOT NULL DELETE FROM RolesRights WHERE RoleId = '${adminRoleId}';
+IF OBJECT_ID('RolesLocalizations') IS NOT NULL DELETE FROM RolesLocalizations WHERE RoleId = '${adminRoleId}';
+IF OBJECT_ID('Roles') IS NOT NULL DELETE FROM Roles WHERE Id = '${adminRoleId}';
+IF OBJECT_ID('RightsLocalizations') IS NOT NULL DELETE FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM Rights WHERE CreatedBy = '${adminUserId}');
+IF OBJECT_ID('Rights') IS NOT NULL DELETE FROM Rights WHERE CreatedBy = '${adminUserId}';
 "@
 if (-not (Invoke-SqlCmd $cleanupQuery)) {
     Read-Host "Нажмите Enter для продолжения..."
@@ -154,11 +154,11 @@ if (-not (Invoke-SqlCmd $cleanupQuery)) {
 Write-Host "Копирование SQL-скрипта в контейнер..."
 $sqlScriptPath = Join-Path $scriptDir "sql\RightsDB\05_setup_admin_rights.sql"
 if (-not (Test-Path $sqlScriptPath)) {
-    Write-Error "ОШИБКА: SQL-скрипт $sqlScriptPath не найден."
+    Write-Error "ОШИБКА: SQL-скрипт ${sqlScriptPath} не найден."
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
-docker cp $sqlScriptPath "$container:/tmp/05_setup_admin_rights.sql"
+docker cp $sqlScriptPath "${container}:/tmp/05_setup_admin_rights.sql"
 if ($LASTEXITCODE -ne 0) {
     Write-Error "ОШИБКА: Не удалось скопировать SQL-скрипт в контейнер."
     Read-Host "Нажмите Enter для продолжения..."
@@ -167,10 +167,10 @@ if ($LASTEXITCODE -ne 0) {
 
 # Настройка прав администратора
 Write-Host "Настройка прав администратора..."
-$setupAdminQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$password' -d $database -i /tmp/05_setup_admin_rights.sql"
+$setupAdminQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${database} -i /tmp/05_setup_admin_rights.sql"
 $result = docker exec -it $container bash -c $setupAdminQuery 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "ОШИБКА: Не удалось настроить права администратора. Подробности: $result"
+    Write-Error "ОШИБКА: Не удалось настроить права администратора. Подробности: ${result}"
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
@@ -178,14 +178,14 @@ if ($LASTEXITCODE -ne 0) {
 # Проверка настройки прав администратора
 Write-Host "Проверка настройки прав администратора..."
 $verifyAdminQuery = @"
-USE $database;
+USE ${database};
 IF OBJECT_ID('Roles') IS NOT NULL AND OBJECT_ID('RolesLocalizations') IS NOT NULL
 SELECT r.Id AS RoleId, rl.Name AS RoleName, r.IsActive AS RoleIsActive, COUNT(DISTINCT rr.RightId) AS AssignedRightsCount, COUNT(DISTINCT ur.UserId) AS AssignedUsersCount
 FROM Roles r
 JOIN RolesLocalizations rl ON r.Id = rl.RoleId AND rl.Locale = 'en'
 LEFT JOIN RolesRights rr ON r.Id = rr.RoleId
 LEFT JOIN UsersRoles ur ON r.Id = ur.RoleId
-WHERE r.Id = '$adminRoleId'
+WHERE r.Id = '${adminRoleId}'
 GROUP BY r.Id, rl.Name, r.IsActive;
 "@
 if (-not (Invoke-SqlCmd $verifyAdminQuery)) {
@@ -195,13 +195,13 @@ if (-not (Invoke-SqlCmd $verifyAdminQuery)) {
 # Проверка целостности данных
 Write-Host "Проверка целостности данных..."
 $verifyIntegrityQuery = @"
-USE $database;
-SELECT 'Roles' AS TableName, CASE WHEN OBJECT_ID('Roles') IS NOT NULL THEN (SELECT COUNT(*) FROM Roles WHERE Id = '$adminRoleId') ELSE 0 END AS Count UNION ALL
-SELECT 'RolesLocalizations', CASE WHEN OBJECT_ID('RolesLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesLocalizations WHERE RoleId = '$adminRoleId') ELSE 0 END UNION ALL
-SELECT 'Rights', CASE WHEN OBJECT_ID('Rights') IS NOT NULL THEN (SELECT COUNT(*) FROM Rights WHERE CreatedBy = '$adminUserId') ELSE 0 END UNION ALL
-SELECT 'RightsLocalizations', CASE WHEN OBJECT_ID('RightsLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM Rights WHERE CreatedBy = '$adminUserId')) ELSE 0 END UNION ALL
-SELECT 'RolesRights', CASE WHEN OBJECT_ID('RolesRights') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesRights WHERE RoleId = '$adminRoleId') ELSE 0 END UNION ALL
-SELECT 'UsersRoles', CASE WHEN OBJECT_ID('UsersRoles') IS NOT NULL THEN (SELECT COUNT(*) FROM UsersRoles WHERE RoleId = '$adminRoleId') ELSE 0 END;
+USE ${database};
+SELECT 'Roles' AS TableName, CASE WHEN OBJECT_ID('Roles') IS NOT NULL THEN (SELECT COUNT(*) FROM Roles WHERE Id = '${adminRoleId}') ELSE 0 END AS Count UNION ALL
+SELECT 'RolesLocalizations', CASE WHEN OBJECT_ID('RolesLocalizations') IS NOT NULL THENVIC (SELECT COUNT(*) FROM RolesLocalizations WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
+SELECT 'Rights', CASE WHEN OBJECT_ID('Rights') IS NOT NULL THEN (SELECT COUNT(*) FROM Rights WHERE CreatedBy = '${adminUserId}') ELSE 0 END UNION ALL
+SELECT 'RightsLocalizations', CASE WHEN OBJECT_ID('RightsLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM Rights WHERE CreatedBy = '${adminUserId}')) ELSE 0 END UNION ALL
+SELECT 'RolesRights', CASE WHEN OBJECT_ID('RolesRights') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesRights WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
+SELECT 'UsersRoles', CASE WHEN OBJECT_ID('UsersRoles') IS NOT NULL THEN (SELECT COUNT(*) FROM UsersRoles WHERE RoleId = '${adminRoleId}') ELSE 0 END;
 "@
 if (-not (Invoke-SqlCmd $verifyIntegrityQuery)) {
     Write-Error "ОШИБКА: Не удалось проверить целостность данных."
@@ -210,10 +210,10 @@ if (-not (Invoke-SqlCmd $verifyIntegrityQuery)) {
 # Вывод финального содержимого таблиц
 Write-Host "Вывод финального содержимого таблиц..."
 foreach ($table in $tables) {
-    Write-Host "Таблица $table:"
-    $query = "USE $database; IF OBJECT_ID('$table') IS NOT NULL SELECT * FROM $table;"
+    Write-Host "Таблица ${table}:"
+    $query = "USE ${database}; IF OBJECT_ID('${table}') IS NOT NULL SELECT * FROM ${table};"
     if (-not (Invoke-SqlCmd $query)) {
-        Write-Error "ОШИБКА: Не удалось вывести финальное содержимое таблицы $table."
+        Write-Error "ОШИБКА: Не удалось вывести финальное содержимое таблицы ${table}."
     }
 }
 
@@ -228,7 +228,7 @@ if (Test-Path $verifyScriptPath) {
         exit 1
     }
 } else {
-    Write-Warning "ПРЕДУПРЕЖДЕНИЕ: Внешний скрипт проверки $verifyScriptPath не найден."
+    Write-Warning "ПРЕДУПРЕЖДЕНИЕ: Внешний скрипт проверки ${verifyScriptPath} не найден."
 }
 
 Write-Host "Готово ✅"
