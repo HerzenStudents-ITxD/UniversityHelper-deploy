@@ -94,7 +94,7 @@ if ($dbExists -notmatch "FeedbackDB") {
 
 # Копирование SQL-скрипта в контейнер
 Write-Host "Копирование SQL-скрипта в контейнер..."
-$sqlScriptPath = Join-Path $scriptDir "sql\FeedbackDB\07_setup_feedback_data.sql"
+$sqlScriptPath = Join-Path $scriptDir "FeedbackDB\07_setup_feedback_data.sql"
 if (-not (Test-Path $sqlScriptPath)) {
     Write-Error "ОШИБКА: SQL-скрипт ${sqlScriptPath} не найден."
     Read-Host "Нажмите Enter для продолжения..."

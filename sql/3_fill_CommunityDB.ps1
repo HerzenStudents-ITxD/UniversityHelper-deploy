@@ -113,7 +113,7 @@ if (-not (Invoke-SqlCmd $cleanupQuery)) {
 
 # Копирование SQL-скрипта в контейнер
 Write-Host "Копирование SQL-скрипта в контейнер..."
-$sqlScriptPath = Join-Path $scriptDir "sql\CommunityDB\06_setup_community_data.sql"
+$sqlScriptPath = Join-Path $scriptDir "CommunityDB\06_setup_community_data.sql"
 if (-not (Test-Path $sqlScriptPath)) {
     Write-Error "ОШИБКА: SQL-скрипт ${sqlScriptPath} не найден."
     Read-Host "Нажмите Enter для продолжения..."
