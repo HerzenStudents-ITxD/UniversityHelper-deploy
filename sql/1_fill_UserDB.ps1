@@ -1,14 +1,23 @@
+# Загружаем переменные окружения из .env файла
+$env:DOTENV_PATH = ".\.env"
+$envVars = Get-Content $env:DOTENV_PATH | Where-Object {$_ -match "^\s*[^#].*=\s*.*$"}
+
+foreach ($envVar in $envVars) {
+    $key, $value = $envVar -split "="
+    [System.Environment]::SetEnvironmentVariable($key.Trim(), $value.Trim(), [System.EnvironmentVariableTarget]::Process)
+}
+
 Write-Host "[DEBUG] Launching UserDB database fill script..."
 
-# Конфигурационные параметры
-$USER_DB_PASSWORD = "User_1234"
-$CONTAINER = "sqlserver_db"
-$DATABASE = "UserDB"
-$LOGIN = "adminlogin"
-$PASSWORD = "Admin_1234"
-$SALT = "Random_Salt"
-$USER_ID = "11111111-1111-1111-1111-111111111111"
-$INTERNAL_SALT = "UniversityHelper.SALT3"
+# Конфигурационные параметры из переменных окружения
+$USER_DB_PASSWORD = $env:SA_PASSWORD
+$CONTAINER = $env:DB_CONTAINER
+$DATABASE = $env:USERDB_DB_NAME
+$LOGIN = $env:USERDB_ADMIN_LOGIN
+$PASSWORD = $env:USERDB_ADMIN_PASSWORD
+$SALT = $env:USERDB_SALT
+$USER_ID = $env:USERDB_ADMIN_USER_ID
+$INTERNAL_SALT = $env:USERDB_INTERNAL_SALT
 
 Write-Host "[DEBUG] 1. Generating SHA512 hash..."
 
@@ -54,9 +63,9 @@ $bytes = [System.IO.File]::ReadAllBytes($outPath)
 Write-Host "First 3 bytes (BOM): $($bytes[0]) $($bytes[1]) $($bytes[2])"
 
 Write-Host "[DEBUG] 5. Copying SQL scripts to container..."
-docker cp ".\sql\UserDB\01_create_admin_user.sql" "$CONTAINER:/tmp/01_create_admin_user.sql"
-docker cp "$outPath" "$CONTAINER:/tmp/02_create_admin_credentials.sql"
-docker cp ".\sql\UserDB\04_setup_admin_user_data.sql" "$CONTAINER:/tmp/04_setup_admin_user_data.sql"
+docker cp ".\sql\UserDB\01_create_admin_user.sql" "${CONTAINER}:/tmp/01_create_admin_user.sql"
+docker cp "$outPath" "${CONTAINER}:/tmp/02_create_admin_credentials.sql"
+docker cp ".\sql\UserDB\04_setup_admin_user_data.sql" "${CONTAINER}:/tmp/04_setup_admin_user_data.sql"
 
 Write-Host "[DEBUG] 6. Executing SQL scripts..."
 docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -i /tmp/01_create_admin_user.sql
