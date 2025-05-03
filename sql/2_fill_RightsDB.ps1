@@ -50,7 +50,7 @@ if ($containerStatus -ne "true") {
 
 # Check existing tables
 Write-Host "Checking existing $DATABASE tables..."
-docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
+$checkTablesQuery = @"
 USE $DATABASE;
 SELECT 'Roles' AS TableName, COUNT(*) AS Count FROM sys.tables WHERE name = 'Roles'
 UNION ALL
@@ -63,7 +63,9 @@ UNION ALL
 SELECT 'RolesRights', COUNT(*) FROM sys.tables WHERE name = 'RolesRights'
 UNION ALL
 SELECT 'UsersRoles', COUNT(*) FROM sys.tables WHERE name = 'UsersRoles';
-"@ -s "," -ErrorAction Stop || ExitWithError "ERROR: Failed to check existing tables."
+"@
+Write-Host "[DEBUG] Executing sqlcmd: /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P [hidden] -d $DATABASE -Q ..."
+docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q $checkTablesQuery -s "," -ErrorAction Stop || ExitWithError "ERROR: Failed to check existing tables."
 
 # Check table structure
 Write-Host "Checking table structure..."
@@ -87,7 +89,7 @@ foreach ($table in $tables) {
 Write-Host "Cleaning up existing data..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
 USE $DATABASE;
-IF OBJECT_ID('UsersRoles') IS NOT NULL DELETE FROM Userspartments WHERE RoleId = '$ADMIN_ROLE_ID';
+IF OBJECT_ID('UsersRoles') IS NOT NULL DELETE FROM UsersRoles WHERE RoleId = '$ADMIN_ROLE_ID';
 IF OBJECT_ID('RolesRights') IS NOT NULL DELETE FROM RolesRights WHERE RoleId = '$ADMIN_ROLE_ID';
 IF OBJECT_ID('RolesLocalizations') IS NOT NULL DELETE FROM RolesLocalizations WHERE RoleId = '$ADMIN_ROLE_ID';
 IF OBJECT_ID('Roles') IS NOT NULL DELETE FROM Roles WHERE Id = '$ADMIN_ROLE_ID';
