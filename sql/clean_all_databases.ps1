@@ -45,6 +45,38 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# Функция для выполнения скрипта очистки
+function Execute-CleanScript {
+    param (
+        [Parameter(Mandatory = $true)]
+        [string]$RelativePath
+    )
+
+    $sqlScript = Join-Path $scriptDir $RelativePath
+
+    if (-not (Test-Path $sqlScript)) {
+        Write-Error "ОШИБКА: Скрипт очистки не найден по пути: ${sqlScript}"
+        return $false
+    }
+
+    Write-Host "Обработка ${RelativePath}..."
+
+    docker cp $sqlScript "${container}:/temp_clean_script.sql"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ОШИБКА: Не удалось скопировать SQL-скрипт в контейнер"
+        return $false
+    }
+
+    docker exec $container /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $password -i /temp_clean_script.sql
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ОШИБКА: Не удалось выполнить скрипт очистки"
+        return $false
+    }
+
+    docker exec $container rm -f /temp_clean_script.sql | Out-Null
+    return $true
+}
+
 # Ожидание готовности SQL Server
 Write-Host "Ожидание готовности SQL Server..."
 $maxAttempts = 12
@@ -87,34 +119,3 @@ foreach ($script in $cleanScripts) {
 Write-Host "Очистка всех баз данных завершена! ✅"
 Read-Host "Нажмите Enter для продолжения..."
 exit 0
-
-function Execute-CleanScript {
-    param (
-        [Parameter(Mandatory = $true)]
-        [string]$RelativePath
-    )
-
-    $sqlScript = Join-Path $scriptDir $RelativePath
-
-    if (-not (Test-Path $sqlScript)) {
-        Write-Error "ОШИБКА: Скрипт очистки не найден по пути: ${sqlScript}"
-        return $false
-    }
-
-    Write-Host "Обработка ${RelativePath}..."
-
-    docker cp $sqlScript "${container}:/temp_clean_script.sql"
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ОШИБКА: Не удалось скопировать SQL-скрипт в контейнер"
-        return $false
-    }
-
-    docker exec $container /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $password -i /temp_clean_script.sql
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ОШИБКА: Не удалось выполнить скрипт очистки"
-        return $false
-    }
-
-    docker exec $container rm -f /temp_clean_script.sql | Out-Null
-    return $true
-}
