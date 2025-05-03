@@ -58,7 +58,7 @@ if ($LASTEXITCODE -ne 0) {
 # Функция для выполнения SQL-команд
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
-    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s','"
+    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W"
     Write-Host "Выполнение SQL: ${Query}"
     $result = docker exec -it $container bash -c $sqlcmd 2>&1
     Write-Host "Результат SQL: ${result}"
@@ -66,7 +66,10 @@ function Invoke-SqlCmd {
         Write-Error "ОШИБКА: Не удалось выполнить SQL-команду. Подробности: ${result}"
         return $false
     }
-    return $result
+    # Очистка результата от лишних строк
+    $cleanResult = ($result -split "`n" | Where-Object { $_ -notmatch "^\s*(\(|\-\-|$)" -and $_ -notmatch "rows affected" } | ForEach-Object { $_.Trim() }) -join "`n"
+    Write-Host "Очищенный результат SQL: ${cleanResult}"
+    return $cleanResult
 }
 
 # Проверка подключения к SQL Server
@@ -81,13 +84,11 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
 Write-Host "Проверка существования базы данных ${database}..."
 $checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
 $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-if ($dbExists -notmatch "RightsDB") {
-    Write-Error "ОШИБКА: База данных ${database} не найдена. Список баз данных: ${dbExists}"
+if ($dbExists -notmatch "^RightsDB\s*$") {
+    Write-Error "ОШИБКА: База данных ${database} не найдена. Очищенный список баз данных: ${dbExists}"
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
-
-#_.
 
 # Проверка существующих таблиц
 Write-Host "Проверка существующих таблиц в базе ${database}..."
