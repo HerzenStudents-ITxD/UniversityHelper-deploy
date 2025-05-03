@@ -23,11 +23,11 @@ if %errorlevel% neq 0 (
 echo SQL Server is ready!
 
 REM Execute clean scripts for each database
-call :execute_clean_script "UserDb\00_clean_UserDb.sql"
-call :execute_clean_script "CommunityDb\00_clean_CommunityDb.sql"
-call :execute_clean_script "RightsDb\00_clean_RightsDb.sql"
-call :execute_clean_script "FeedbackDb\00_clean_FeedbackDb.sql"
-call :execute_clean_script "MapDb\00_clean_MapDb.sql"
+call :execute_clean_script "UserDB\00_clean_UserDB.sql"
+call :execute_clean_script "CommunityDB\00_clean_CommunityDB.sql"
+call :execute_clean_script "RightsDB\00_clean_RightsDB.sql"
+call :execute_clean_script "FeedbackDB\00_clean_FeedbackDB.sql"
+call :execute_clean_script "MapDB\00_clean_MapDB.sql"
 
 echo All databases cleaning completed! ✅
 pause

@@ -4,7 +4,7 @@
 USER_DB_PASSWORD="User_1234"
 CONTAINER="sqlserver_db"
 DATABASE="CommunityDB"
-SQL_SCRIPT="sql/CommunityDb/06_setup_community_data.sql"
+SQL_SCRIPT="sql/CommunityDB/06_setup_community_data.sql"
 
 echo "Installing community data..."
 

@@ -1,5 +1,5 @@
 @echo off
-echo [DEBUG] Launching UserDb database fill script...
+echo [DEBUG] Launching UserDB database fill script...
 setlocal enabledelayedexpansion
 
 :: Конфигурационные параметры
@@ -36,19 +36,19 @@ echo );>> temp.sql
 echo PRINT 'Created admin credentials for login: adminlogin';>> temp.sql
 
 :: Конвертируем в UTF-8 без BOM
-powershell -Command "[System.IO.File]::WriteAllText('.\sql\UserDb\02_create_admin_credentials.sql', [System.IO.File]::ReadAllText('temp.sql'), [System.Text.Encoding]::UTF8)"
+powershell -Command "[System.IO.File]::WriteAllText('.\sql\UserDB\02_create_admin_credentials.sql', [System.IO.File]::ReadAllText('temp.sql'), [System.Text.Encoding]::UTF8)"
 del temp.sql
 
 echo [DEBUG] 3. Verifying generated SQL file...
-type ".\sql\UserDb\02_create_admin_credentials.sql"
+type ".\sql\UserDB\02_create_admin_credentials.sql"
 
 echo [DEBUG] 4. Checking file encoding...
-powershell -Command "$bytes = [System.IO.File]::ReadAllBytes('.\sql\UserDb\02_create_admin_credentials.sql'); 'First 3 bytes (BOM): ' + $bytes[0] + ' ' + $bytes[1] + ' ' + $bytes[2]"
+powershell -Command "$bytes = [System.IO.File]::ReadAllBytes('.\sql\UserDB\02_create_admin_credentials.sql'); 'First 3 bytes (BOM): ' + $bytes[0] + ' ' + $bytes[1] + ' ' + $bytes[2]"
 
 echo [DEBUG] 5. Copying SQL scripts to container...
-docker cp ".\sql\UserDb\01_create_admin_user.sql" %CONTAINER%:/tmp/01_create_admin_user.sql
-docker cp ".\sql\UserDb\02_create_admin_credentials.sql" %CONTAINER%:/tmp/02_create_admin_credentials.sql
-docker cp ".\sql\UserDb\04_setup_admin_user_data.sql" %CONTAINER%:/tmp/04_setup_admin_user_data.sql
+docker cp ".\sql\UserDB\01_create_admin_user.sql" %CONTAINER%:/tmp/01_create_admin_user.sql
+docker cp ".\sql\UserDB\02_create_admin_credentials.sql" %CONTAINER%:/tmp/02_create_admin_credentials.sql
+docker cp ".\sql\UserDB\04_setup_admin_user_data.sql" %CONTAINER%:/tmp/04_setup_admin_user_data.sql
 
 echo [DEBUG] 6. Executing SQL scripts...
 docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %USER_DB_PASSWORD% -d %DATABASE% -i /tmp/01_create_admin_user.sql

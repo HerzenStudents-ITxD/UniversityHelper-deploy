@@ -1,5 +1,5 @@
 @echo off
-echo Launching CommunityDb database fill script...
+echo Launching CommunityDB database fill script...
 setlocal enabledelayedexpansion
 
 set USER_DB_PASSWORD=User_1234
@@ -26,12 +26,12 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo Copying SQL script to container...
-if not exist .\sql\CommunityDb\06_setup_community_data.sql (
-    echo ERROR: SQL script .\sql\CommunityDb\06_setup_community_data.sql not found.
+if not exist .\sql\CommunityDB\06_setup_community_data.sql (
+    echo ERROR: SQL script .\sql\CommunityDB\06_setup_community_data.sql not found.
     pause
     exit /b 1
 )
-docker cp .\sql\CommunityDb\06_setup_community_data.sql %CONTAINER%:/tmp/06_setup_community_data.sql
+docker cp .\sql\CommunityDB\06_setup_community_data.sql %CONTAINER%:/tmp/06_setup_community_data.sql
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy SQL script to container.
     pause
@@ -48,15 +48,15 @@ if %ERRORLEVEL% neq 0 (
 
 echo.
 echo Verifying CommunityDB tables...
-if exist .\sql\CommunityDb\check_CommunityDB_tables.bat (
-    call .\sql\CommunityDb\check_CommunityDB_tables.bat
+if exist .\sql\CommunityDB\check_CommunityDB_tables.bat (
+    call .\sql\CommunityDB\check_CommunityDB_tables.bat
     if %ERRORLEVEL% neq 0 (
         echo ERROR: Verification script check_CommunityDB_tables.bat failed.
         pause
         exit /b 1
     )
 ) else (
-    echo WARNING: Verification script .\sql\CommunityDb\check_CommunityDB_tables.bat not found.
+    echo WARNING: Verification script .\sql\CommunityDB\check_CommunityDB_tables.bat not found.
     :: Uncomment the following block if check_CommunityDB_tables.bat is in check_tables folder
     :: if exist .\check_tables\check_CommunityDB_tables.bat (
     ::     call .\check_tables\check_CommunityDB_tables.bat
