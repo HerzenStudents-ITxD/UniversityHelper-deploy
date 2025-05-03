@@ -65,8 +65,8 @@ SELECT
     MiddleName,
     IsAdmin,
     IsActive,
-    CreatedBy,
-    CreatedAtUtc
+    CreatedBy
+    -- CreatedAtUtc
 FROM Users 
 WHERE Id = @AdminUserId;
 
