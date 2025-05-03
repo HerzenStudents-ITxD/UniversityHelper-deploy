@@ -160,7 +160,7 @@ if (-not (Invoke-SqlCmd $cleanupQuery)) {
 
 # Копирование SQL-скрипта в контейнер
 Write-Host "Копирование SQL-скрипта в контейнер..."
-$sqlScriptPath = Join-Path $scriptDir "sql\RightsDB\05_setup_admin_rights.sql"
+$sqlScriptPath = Join-Path $scriptDir "RightsDB\05_setup_admin_rights.sql"
 if (-not (Test-Path $sqlScriptPath)) {
     Write-Error "ОШИБКА: SQL-скрипт ${sqlScriptPath} не найден."
     Read-Host "Нажмите Enter для продолжения..."
@@ -208,7 +208,7 @@ SELECT 'Roles' AS TableName, CASE WHEN OBJECT_ID('Roles') IS NOT NULL THEN (SELE
 SELECT 'RolesLocalizations', CASE WHEN OBJECT_ID('RolesLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesLocalizations WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
 SELECT 'Rights', CASE WHEN OBJECT_ID('Rights') IS NOT NULL THEN (SELECT COUNT(*) FROM Rights WHERE CreatedBy = '${adminUserId}') ELSE 0 END UNION ALL
 SELECT 'RightsLocalizations', CASE WHEN OBJECT_ID('RightsLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM Rights WHERE CreatedBy = '${adminUserId}')) ELSE 0 END UNION ALL
-SELECT 'RolesRights', CASE WHEN OBJECT_ID('RolesRights') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesRights WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
+SELECT 'RolesRights', CASE WHEN OBJECT_ID('RolesRights') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesRights WHERE Role BlockquoteId = '${adminRoleId}') ELSE 0 END UNION ALL
 SELECT 'UsersRoles', CASE WHEN OBJECT_ID('UsersRoles') IS NOT NULL THEN (SELECT COUNT(*) FROM UsersRoles WHERE RoleId = '${adminRoleId}') ELSE 0 END;
 "@
 if (-not (Invoke-SqlCmd $verifyIntegrityQuery)) {
