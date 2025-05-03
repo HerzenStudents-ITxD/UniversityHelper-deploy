@@ -1,11 +1,11 @@
 Write-Host "Launching RightsDB database fill script..."
 
-# [DEBUG] Load .env from same directory as this script
+# [DEBUG] Load .env from the sql directory
 $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
-$envPath = Join-Path $scriptDirectory ".env"
-Write-Host "[DEBUG] Loading environment variables from .env file..."
+$envPath = Join-Path (Split-Path -Parent $scriptDirectory) ".env"
+Write-Host "[DEBUG] Loading environment variables from .env file: $envPath"
 if (-Not (Test-Path $envPath)) {
-    Write-Error "[ERROR] .env file not found in script directory: $envPath"
+    Write-Error "[ERROR] .env file not found at: $envPath"
     exit 1
 }
 
@@ -25,6 +25,15 @@ $RIGHTS_DB_PASSWORD = $env:SA_PASSWORD
 $DATABASE = $env:RIGHTSDB_DB_NAME
 $ADMIN_USER_ID = $env:RIGHTSDB_ADMIN_USER_ID
 $ADMIN_ROLE_ID = $env:RIGHTSDB_ADMIN_ROLE_ID
+
+# Validate environment variables
+$requiredVars = @("DB_CONTAINER", "SA_PASSWORD", "RIGHTSDB_DB_NAME", "RIGHTSDB_ADMIN_USER_ID", "RIGHTSDB_ADMIN_ROLE_ID")
+foreach ($var in $requiredVars) {
+    if (-not [System.Environment]::GetEnvironmentVariable($var)) {
+        Write-Error "[ERROR] Environment variable $var is not set."
+        exit 1
+    }
+}
 
 function ExitWithError($message) {
     Write-Error $message
