@@ -31,7 +31,7 @@ function ExitWithError($message) {
 
 # Проверка контейнера
 Write-Host "Checking if container $CONTAINER is running..."
-if (-not (docker inspect $CONTAINER -ErrorAction SilentlyContinue)) {
+if (!(docker ps --format '{{.Names}}' | Where-Object { $_ -eq $CONTAINER })) {
     ExitWithError "ERROR: Container $CONTAINER is not running."
 }
 
