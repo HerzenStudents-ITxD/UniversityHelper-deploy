@@ -1,9 +1,25 @@
-# fill_all_databases.ps1
-Write-Host "Launching all database fill scripts..."
+# PowerShell Core скрипт для заполнения всех баз данных
+# Установка кодировки UTF-8 для корректного отображения русских символов
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
+Write-Host "Запуск скрипта заполнения всех баз данных..."
 
-# Получаем путь к директории текущего скрипта
-$SCRIPT_DIR = Split-Path -Parent $MyInvocation.MyCommand.Path
-Write-Host "[Debug] Script directory: $SCRIPT_DIR"
+# Загрузка переменных окружения из файла .env в директории скрипта
+$scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
+$envFile = Join-Path $scriptDir ".env"
+if (-not (Test-Path $envFile)) {
+    Write-Error "ОШИБКА: Файл .env не найден по пути ${envFile}"
+    Read-Host "Нажмите Enter для продолжения..."
+    exit 1
+}
+Get-Content $envFile | ForEach-Object {
+    if ($_ -match "^\s*([^#=]+)\s*=\s*(.+?)\s*$") {
+        [System.Environment]::SetEnvironmentVariable($matches[1], $matches[2])
+    }
+}
+
+# Отладочная информация о кодировке
+Write-Host "[Debug] Script directory: $scriptDir"
+Write-Host "[Debug] Current console output encoding: $([Console]::OutputEncoding.BodyName)"
 
 # Список PowerShell-скриптов для выполнения
 $scripts = @(
@@ -20,23 +36,26 @@ function Run-Script {
         [string]$ScriptName
     )
 
-    $ScriptPath = Join-Path $SCRIPT_DIR $ScriptName
+    $scriptPath = Join-Path $scriptDir $ScriptName
 
-    Write-Host "[Executing] $ScriptPath"
-    if (-not (Test-Path $ScriptPath)) {
-        Write-Error "[Error] Script '$ScriptPath' not found!"
+    Write-Host "[Executing] $scriptPath"
+    if (-not (Test-Path $scriptPath)) {
+        Write-Error "[Error] Script '$scriptPath' not found!"
         Write-Host "[Debug] Current directory: $(Get-Location)"
-        Write-Host "[Debug] Script directory: $SCRIPT_DIR"
+        Write-Host "[Debug] Script directory: $scriptDir"
+        Read-Host "Press Enter to continue..."
         exit 1
     }
 
-    & powershell -NoProfile -ExecutionPolicy Bypass -File $ScriptPath
+    # Прямой запуск скрипта в текущей сессии для сохранения кодировки
+    & $scriptPath
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "[Error] Script '$ScriptPath' failed with code $LASTEXITCODE"
+        Write-Error "[Error] Script '$scriptPath' failed with code $LASTEXITCODE"
+        Read-Host "Press Enter to continue..."
         exit $LASTEXITCODE
     }
 
-    Write-Host "[Success] $ScriptPath completed"
+    Write-Host "[Success] $scriptPath completed"
     Write-Host ""
 }
 
@@ -46,6 +65,6 @@ foreach ($script in $scripts) {
 }
 
 Write-Host ""
-Write-Host "All databases filled successfully! ✅"
-Read-Host "Press Enter to exit"
+Write-Host "Все базы данных успешно заполнены! ✅"
+Read-Host "Нажмите Enter для выхода"
 exit 0
