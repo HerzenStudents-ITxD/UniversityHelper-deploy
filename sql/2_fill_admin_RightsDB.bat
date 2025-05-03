@@ -1,11 +1,11 @@
 @echo off
-echo Launching RightDB database fill script...
+echo Launching RighsDB database fill script...
 setlocal enabledelayedexpansion
 
 :: Configuration
 set RIGHTS_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db
-set DATABASE=RightDB
+set DATABASE=RighsDB
 set ADMIN_USER_ID=11111111-1111-1111-1111-111111111111
 set ADMIN_ROLE_ID=11111111-1111-1111-1111-111111111111
 
@@ -126,12 +126,12 @@ if %ERRORLEVEL% neq 0 (
 
 :: Copy SQL script to container
 echo Copying SQL script to container...
-if not exist .\sql\RightDB\05_setup_admin_rights.sql (
-    echo ERROR: SQL script .\sql\RightDB\05_setup_admin_rights.sql not found.
+if not exist .\sql\RighsDB\05_setup_admin_rights.sql (
+    echo ERROR: SQL script .\sql\RighsDB\05_setup_admin_rights.sql not found.
     pause
     exit /b 1
 )
-docker cp .\sql\RightDB\05_setup_admin_rights.sql %CONTAINER%:/tmp/05_setup_admin_rights.sql
+docker cp .\sql\RighsDB\05_setup_admin_rights.sql %CONTAINER%:/tmp/05_setup_admin_rights.sql
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy SQL script to container.
     pause
@@ -216,27 +216,27 @@ if %ERRORLEVEL% neq 0 (
 )
 
 :: Run external verification script if exists
-if exist .\sql\RightDB\check_RightDB_tables.bat (
+if exist .\sql\RighsDB\check_RighsDB_tables.bat (
     echo Running external verification script...
-    call .\sql\RightDB\check_RightDB_tables.bat
+    call .\sql\RighsDB\check_RighsDB_tables.bat
     if %ERRORLEVEL% neq 0 (
         echo ERROR: External verification script failed.
         pause
         exit /b 1
     )
 ) else (
-    echo WARNING: External verification script .\sql\RightDB\check_RightDB_tables.bat not found.
-    :: Uncomment the following line if check_RightDB_tables.bat is in check_tables folder
-    :: if exist .\check_tables\check_RightDB_tables.bat (
+    echo WARNING: External verification script .\sql\RighsDB\check_RighsDB_tables.bat not found.
+    :: Uncomment the following line if check_RighsDB_tables.bat is in check_tables folder
+    :: if exist .\check_tables\check_RighsDB_tables.bat (
     ::     echo Running external verification script...
-    ::     call .\check_tables\check_RightDB_tables.bat
+    ::     call .\check_tables\check_RighsDB_tables.bat
     ::     if %ERRORLEVEL% neq 0 (
     ::         echo ERROR: External verification script failed.
     ::         pause
     ::         exit /b 1
     ::     )
     :: ) else (
-    ::     echo WARNING: External verification script .\check_tables\check_RightDB_tables.bat not found.
+    ::     echo WARNING: External verification script .\check_tables\check_RighsDB_tables.bat not found.
     :: )
 )
 
