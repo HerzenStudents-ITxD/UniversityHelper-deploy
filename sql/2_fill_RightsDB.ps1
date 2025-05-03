@@ -1,13 +1,27 @@
-# fill_RightsDB.ps1
-
 Write-Host "Launching RightsDB database fill script..."
 
-# Configuration
-$RIGHTS_DB_PASSWORD = "User_1234"
-$CONTAINER = "sqlserver_db"
-$DATABASE = "RightsDB"
-$ADMIN_USER_ID = "11111111-1111-1111-1111-111111111111"
-$ADMIN_ROLE_ID = "11111111-1111-1111-1111-111111111111"
+# Путь к .env файлу (в той же папке, где лежит скрипт)
+$envFilePath = Join-Path -Path $PSScriptRoot -ChildPath ".env"
+
+# Загрузка переменных окружения из .env
+if (Test-Path $envFilePath) {
+    Write-Host "[DEBUG] Loading environment variables from .env file..."
+    $envVars = Get-Content $envFilePath | Where-Object {$_ -match "^\s*[^#].*=\s*.*$"}
+    foreach ($envVar in $envVars) {
+        $key, $value = $envVar -split "=", 2
+        [System.Environment]::SetEnvironmentVariable($key.Trim(), $value.Trim(), [System.EnvironmentVariableTarget]::Process)
+    }
+} else {
+    Write-Host "[ERROR] .env file not found in script directory!"
+    exit 1
+}
+
+# Конфигурация
+$RIGHTS_DB_PASSWORD = $env:SA_PASSWORD
+$CONTAINER = $env:DB_CONTAINER
+$DATABASE = $env:RIGHTSDB_DB_NAME
+$ADMIN_USER_ID = $env:RIGHTSDB_ADMIN_USER_ID
+$ADMIN_ROLE_ID = $env:RIGHTSDB_ADMIN_ROLE_ID
 
 function ExitWithError($message) {
     Write-Error $message
@@ -15,13 +29,13 @@ function ExitWithError($message) {
     exit 1
 }
 
-# Check if container is running
+# Проверка контейнера
 Write-Host "Checking if container $CONTAINER is running..."
 if (-not (docker inspect $CONTAINER -ErrorAction SilentlyContinue)) {
     ExitWithError "ERROR: Container $CONTAINER is not running."
 }
 
-# Check existing tables
+# Проверка таблиц
 Write-Host "Checking existing $DATABASE tables..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
 USE $DATABASE;
@@ -38,7 +52,7 @@ UNION ALL
 SELECT 'UsersRoles', COUNT(*) FROM sys.tables WHERE name = 'UsersRoles';
 "@ -s "," -ErrorAction Stop || ExitWithError "ERROR: Failed to check existing tables."
 
-# Check table structure
+# Структура таблиц
 Write-Host "Checking table structure..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
 USE $DATABASE;
@@ -48,7 +62,7 @@ WHERE TABLE_NAME IN ('Roles', 'RolesLocalizations', 'Rights', 'RightsLocalizatio
 ORDER BY TABLE_NAME, ORDINAL_POSITION;
 "@ -s "," -ErrorAction Stop || ExitWithError "ERROR: Failed to check table structure."
 
-# Print current table contents
+# Печать содержимого
 Write-Host "Printing current table contents..."
 $tables = @("Rights", "Roles", "RolesLocalizations", "RightsLocalizations", "RolesRights", "UsersRoles")
 foreach ($table in $tables) {
@@ -56,7 +70,7 @@ foreach ($table in $tables) {
     docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q "USE $DATABASE; IF OBJECT_ID('$table') IS NOT NULL SELECT * FROM $table;" -s "," -ErrorAction SilentlyContinue
 }
 
-# Clean up existing data
+# Очистка
 Write-Host "Cleaning up existing data..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
 USE $DATABASE;
@@ -68,19 +82,19 @@ IF OBJECT_ID('RightsLocalizations') IS NOT NULL DELETE FROM RightsLocalizations 
 IF OBJECT_ID('Rights') IS NOT NULL DELETE FROM Rights WHERE CreatedBy = '$ADMIN_USER_ID';
 "@ -ErrorAction Stop || ExitWithError "ERROR: Failed to clean up existing data."
 
-# Copy SQL script to container
+# Копирование скрипта
 Write-Host "Copying SQL script to container..."
-$sqlPath = ".\sql\RightsDB\05_setup_admin_rights.sql"
+$sqlPath = Join-Path $PSScriptRoot "sql\RightsDB\05_setup_admin_rights.sql"
 if (-not (Test-Path $sqlPath)) {
     ExitWithError "ERROR: SQL script $sqlPath not found."
 }
-docker cp $sqlPath "$CONTAINER:/tmp/05_setup_admin_rights.sql" || ExitWithError "ERROR: Failed to copy SQL script to container."
+docker cp $sqlPath "${CONTAINER}:/tmp/05_setup_admin_rights.sql" || ExitWithError "ERROR: Failed to copy SQL script to container."
 
-# Set up admin rights
+# Выполнение скрипта
 Write-Host "Setting up admin rights..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -i /tmp/05_setup_admin_rights.sql || ExitWithError "ERROR: Failed to set up admin rights."
 
-# Verify admin rights setup
+# Проверка результатов
 Write-Host "Verifying admin rights setup..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
 USE $DATABASE;
@@ -94,7 +108,7 @@ WHERE r.Id = '$ADMIN_ROLE_ID'
 GROUP BY r.Id, rl.Name, r.IsActive;
 "@ -s "," -ErrorAction SilentlyContinue
 
-# Verify data integrity
+# Проверка целостности данных
 Write-Host "Verifying data integrity..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
 USE $DATABASE;
@@ -111,15 +125,15 @@ UNION ALL
 SELECT 'UsersRoles', CASE WHEN OBJECT_ID('UsersRoles') IS NOT NULL THEN (SELECT COUNT(*) FROM UsersRoles WHERE RoleId = '$ADMIN_ROLE_ID') ELSE 0 END;
 "@ -s "," -ErrorAction SilentlyContinue
 
-# Print final table contents
+# Финальный вывод
 Write-Host "Printing final table contents..."
 foreach ($table in $tables) {
     Write-Host "$table table:"
     docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q "USE $DATABASE; IF OBJECT_ID('$table') IS NOT NULL SELECT * FROM $table;" -s "," -ErrorAction SilentlyContinue
 }
 
-# Run external verification script if exists
-$checkScript = ".\sql\RightsDB\check_RightsDB_tables.bat"
+# Внешняя проверка (если есть)
+$checkScript = Join-Path $PSScriptRoot "sql\RightsDB\check_RightsDB_tables.bat"
 if (Test-Path $checkScript) {
     Write-Host "Running external verification script..."
     cmd /c $checkScript || ExitWithError "ERROR: External verification script failed."
