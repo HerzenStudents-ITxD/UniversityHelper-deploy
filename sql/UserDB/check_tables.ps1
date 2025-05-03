@@ -38,4 +38,7 @@ Write-Host "`nUsersCommunications:"
 docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM UsersCommunications"
 
 Write-Host "`nPendingUsers:"
-docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "
+docker exec -it $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $USER_DB_PASSWORD -d $DATABASE -Q "SELECT * FROM PendingUsers"
+
+Write-Host "`nDone ✅"
+Read-Host "Press Enter to continue"
