@@ -61,6 +61,7 @@ function Invoke-SqlCmd {
     $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s','"
     Write-Host "Выполнение SQL: ${Query}"
     $result = docker exec -it $container bash -c $sqlcmd 2>&1
+    Write-Host "Результат SQL: ${result}"
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ОШИБКА: Не удалось выполнить SQL-команду. Подробности: ${result}"
         return $false
@@ -78,13 +79,15 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
 
 # Проверка существования базы данных
 Write-Host "Проверка существования базы данных ${database}..."
-$checkDbQuery = "IF DB_ID('${database}') IS NOT NULL SELECT 1 AS DbExists ELSE SELECT 0 AS DbExists"
+$checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
 $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-if ($dbExists -notmatch "1") {
-    Write-Error "ОШИБКА: База данных ${database} не существует."
+if ($dbExists -notmatch "RightsDB") {
+    Write-Error "ОШИБКА: База данных ${database} не найдена. Список баз данных: ${dbExists}"
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
+
+#_.
 
 # Проверка существующих таблиц
 Write-Host "Проверка существующих таблиц в базе ${database}..."
@@ -197,7 +200,7 @@ Write-Host "Проверка целостности данных..."
 $verifyIntegrityQuery = @"
 USE ${database};
 SELECT 'Roles' AS TableName, CASE WHEN OBJECT_ID('Roles') IS NOT NULL THEN (SELECT COUNT(*) FROM Roles WHERE Id = '${adminRoleId}') ELSE 0 END AS Count UNION ALL
-SELECT 'RolesLocalizations', CASE WHEN OBJECT_ID('RolesLocalizations') IS NOT NULL THENVIC (SELECT COUNT(*) FROM RolesLocalizations WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
+SELECT 'RolesLocalizations', CASE WHEN OBJECT_ID('RolesLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesLocalizations WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
 SELECT 'Rights', CASE WHEN OBJECT_ID('Rights') IS NOT NULL THEN (SELECT COUNT(*) FROM Rights WHERE CreatedBy = '${adminUserId}') ELSE 0 END UNION ALL
 SELECT 'RightsLocalizations', CASE WHEN OBJECT_ID('RightsLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM Rights WHERE CreatedBy = '${adminUserId}')) ELSE 0 END UNION ALL
 SELECT 'RolesRights', CASE WHEN OBJECT_ID('RolesRights') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesRights WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
