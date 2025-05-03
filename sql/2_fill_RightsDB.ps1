@@ -1,8 +1,8 @@
 Write-Host "Launching RightsDB database fill script..."
 
-# [DEBUG] Load .env from the sql directory
+# [DEBUG] Load .env from the same directory as the script
 $scriptDirectory = Split-Path -Parent $MyInvocation.MyCommand.Path
-$envPath = Join-Path (Split-Path -Parent $scriptDirectory) ".env"
+$envPath = Join-Path $scriptDirectory ".env"
 Write-Host "[DEBUG] Loading environment variables from .env file: $envPath"
 if (-Not (Test-Path $envPath)) {
     Write-Error "[ERROR] .env file not found at: $envPath"
@@ -87,7 +87,7 @@ foreach ($table in $tables) {
 Write-Host "Cleaning up existing data..."
 docker exec -i $CONTAINER /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $RIGHTS_DB_PASSWORD -d $DATABASE -Q @"
 USE $DATABASE;
-IF OBJECT_ID('UsersRoles') IS NOT NULL DELETE FROM UsersRoles WHERE RoleId = '$ADMIN_ROLE_ID';
+IF OBJECT_ID('UsersRoles') IS NOT NULL DELETE FROM Userspartments WHERE RoleId = '$ADMIN_ROLE_ID';
 IF OBJECT_ID('RolesRights') IS NOT NULL DELETE FROM RolesRights WHERE RoleId = '$ADMIN_ROLE_ID';
 IF OBJECT_ID('RolesLocalizations') IS NOT NULL DELETE FROM RolesLocalizations WHERE RoleId = '$ADMIN_ROLE_ID';
 IF OBJECT_ID('Roles') IS NOT NULL DELETE FROM Roles WHERE Id = '$ADMIN_ROLE_ID';
