@@ -1,10 +1,17 @@
-# Загружаем переменные окружения из .env файла
-$env:DOTENV_PATH = ".\.env"
-$envVars = Get-Content $env:DOTENV_PATH | Where-Object {$_ -match "^\s*[^#].*=\s*.*$"}
+# Проверка существования .env файла и загрузка переменных
+$envFilePath = ".\.env"
 
-foreach ($envVar in $envVars) {
-    $key, $value = $envVar -split "="
-    [System.Environment]::SetEnvironmentVariable($key.Trim(), $value.Trim(), [System.EnvironmentVariableTarget]::Process)
+if (Test-Path $envFilePath) {
+    Write-Host "[DEBUG] Loading environment variables from .env file..."
+    $envVars = Get-Content $envFilePath | Where-Object {$_ -match "^\s*[^#].*=\s*.*$"}
+
+    foreach ($envVar in $envVars) {
+        $key, $value = $envVar -split "="
+        [System.Environment]::SetEnvironmentVariable($key.Trim(), $value.Trim(), [System.EnvironmentVariableTarget]::Process)
+    }
+} else {
+    Write-Host "[ERROR] .env file not found in the current directory!"
+    exit
 }
 
 Write-Host "[DEBUG] Launching UserDB database fill script..."
@@ -18,6 +25,12 @@ $PASSWORD = $env:USERDB_ADMIN_PASSWORD
 $SALT = $env:USERDB_SALT
 $USER_ID = $env:USERDB_ADMIN_USER_ID
 $INTERNAL_SALT = $env:USERDB_INTERNAL_SALT
+
+# Проверка переменных
+if (-not $USER_DB_PASSWORD -or -not $CONTAINER -or -not $DATABASE -or -not $LOGIN -or -not $PASSWORD -or -not $SALT -or -not $USER_ID -or -not $INTERNAL_SALT) {
+    Write-Host "[ERROR] One or more required environment variables are missing!"
+    exit
+}
 
 Write-Host "[DEBUG] 1. Generating SHA512 hash..."
 
