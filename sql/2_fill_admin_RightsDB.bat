@@ -1,11 +1,11 @@
 @echo off
-echo Launching RightsDB database fill script...
+echo Launching RightDB database fill script...
 setlocal enabledelayedexpansion
 
 :: Configuration
 set RIGHTS_DB_PASSWORD=User_1234
 set CONTAINER=sqlserver_db
-set DATABASE=RightsDB
+set DATABASE=RightDB
 set ADMIN_USER_ID=11111111-1111-1111-1111-111111111111
 set ADMIN_ROLE_ID=11111111-1111-1111-1111-111111111111
 
@@ -44,6 +44,28 @@ WHERE TABLE_NAME IN ('Roles', 'RolesLocalizations', 'Rights', 'RightsLocalizatio
 ORDER BY TABLE_NAME, ORDINAL_POSITION;" -s","
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to check table structure.
+    pause
+    exit /b 1
+)
+
+:: Create tables if they don't exist
+echo Creating tables if they don't exist...
+docker exec -it %CONTAINER% /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P %RIGHTS_DB_PASSWORD% -d %DATABASE% -Q ^
+"USE %DATABASE%; ^
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Rights') ^
+    CREATE TABLE Rights (RightId int PRIMARY KEY, CreatedBy uniqueidentifier NOT NULL); ^
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'Roles') ^
+    CREATE TABLE Roles (Id uniqueidentifier PRIMARY KEY, IsActive bit NOT NULL, CreatedBy uniqueidentifier NOT NULL, PeriodStart datetime2 GENERATED ALWAYS AS ROW START, PeriodEnd datetime2 GENERATED ALWAYS AS ROW END, PERIOD FOR SYSTEM_TIME (PeriodStart, PeriodEnd)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.RolesHistory)); ^
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RolesLocalizations') ^
+    CREATE TABLE RolesLocalizations (Id uniqueidentifier PRIMARY KEY, RoleId uniqueidentifier NOT NULL, Locale char(2) NOT NULL, Name nvarchar(max) NOT NULL, Description nvarchar(max) NOT NULL, IsActive bit NOT NULL, CreatedBy uniqueidentifier NOT NULL, CreatedAtUtc datetime2 NOT NULL, ModifiedBy uniqueidentifier, ModifiedAtUtc datetime2, CONSTRAINT FK_RolesLocalizations_Roles FOREIGN KEY (RoleId) REFERENCES Roles(Id)); ^
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RightsLocalizations') ^
+    CREATE TABLE RightsLocalizations (Id uniqueidentifier PRIMARY KEY, RightId int NOT NULL, Locale char(2) NOT NULL, Name nvarchar(max) NOT NULL, Description nvarchar(max) NOT NULL, CONSTRAINT FK_RightsLocalizations_Rights FOREIGN KEY (RightId) REFERENCES Rights(RightId)); ^
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'RolesRights') ^
+    CREATE TABLE RolesRights (Id uniqueidentifier PRIMARY KEY, RoleId uniqueidentifier NOT NULL, RightId int NOT NULL, CreatedBy uniqueidentifier NOT NULL, PeriodStart datetime2 GENERATED ALWAYS AS ROW START, PeriodEnd datetime2 GENERATED ALWAYS AS ROW END, PERIOD FOR SYSTEM_TIME (PeriodStart, PeriodEnd), CONSTRAINT FK_RolesRights_Roles FOREIGN KEY (RoleId) REFERENCES Roles(Id), CONSTRAINT FK_RolesRights_Rights FOREIGN KEY (RightId) REFERENCES Rights(RightId)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.RolesRightsHistory)); ^
+IF NOT EXISTS (SELECT * FROM sys.tables WHERE name = 'UsersRoles') ^
+    CREATE TABLE UsersRoles (Id uniqueidentifier PRIMARY KEY, UserId uniqueidentifier NOT NULL, RoleId uniqueidentifier NOT NULL, IsActive bit NOT NULL, CreatedBy uniqueidentifier NOT NULL, PeriodStart datetime2 GENERATED ALWAYS AS ROW START, PeriodEnd datetime2 GENERATED ALWAYS AS ROW END, PERIOD FOR SYSTEM_TIME (PeriodStart, PeriodEnd), CONSTRAINT FK_UsersRoles_Roles FOREIGN KEY (RoleId) REFERENCES Roles(Id)) WITH (SYSTEM_VERSIONING = ON (HISTORY_TABLE = dbo.UsersRolesHistory));"
+if %ERRORLEVEL% neq 0 (
+    echo ERROR: Failed to create tables.
     pause
     exit /b 1
 )
@@ -104,12 +126,12 @@ if %ERRORLEVEL% neq 0 (
 
 :: Copy SQL script to container
 echo Copying SQL script to container...
-if not exist .\sql\RightsDB\05_setup_admin_rights.sql (
-    echo ERROR: SQL script .\sql\RightsDB\05_setup_admin_rights.sql not found.
+if not exist .\sql\RightDB\05_setup_admin_rights.sql (
+    echo ERROR: SQL script .\sql\RightDB\05_setup_admin_rights.sql not found.
     pause
     exit /b 1
 )
-docker cp .\sql\RightsDB\05_setup_admin_rights.sql %CONTAINER%:/tmp/05_setup_admin_rights.sql
+docker cp .\sql\RightDB\05_setup_admin_rights.sql %CONTAINER%:/tmp/05_setup_admin_rights.sql
 if %ERRORLEVEL% neq 0 (
     echo ERROR: Failed to copy SQL script to container.
     pause
@@ -194,27 +216,27 @@ if %ERRORLEVEL% neq 0 (
 )
 
 :: Run external verification script if exists
-if exist .\sql\RightsDB\check_RightsDB_tables.bat (
+if exist .\sql\RightDB\check_RightDB_tables.bat (
     echo Running external verification script...
-    call .\sql\RightsDB\check_RightsDB_tables.bat
+    call .\sql\RightDB\check_RightDB_tables.bat
     if %ERRORLEVEL% neq 0 (
         echo ERROR: External verification script failed.
         pause
         exit /b 1
     )
 ) else (
-    echo WARNING: External verification script .\sql\RightsDB\check_RightsDB_tables.bat not found.
-    :: Uncomment the following line if check_RightsDB_tables.bat is in check_tables folder
-    :: if exist .\check_tables\check_RightsDB_tables.bat (
+    echo WARNING: External verification script .\sql\RightDB\check_RightDB_tables.bat not found.
+    :: Uncomment the following line if check_RightDB_tables.bat is in check_tables folder
+    :: if exist .\check_tables\check_RightDB_tables.bat (
     ::     echo Running external verification script...
-    ::     call .\check_tables\check_RightsDB_tables.bat
+    ::     call .\check_tables\check_RightDB_tables.bat
     ::     if %ERRORLEVEL% neq 0 (
     ::         echo ERROR: External verification script failed.
     ::         pause
     ::         exit /b 1
     ::     )
     :: ) else (
-    ::     echo WARNING: External verification script .\check_tables\check_RightsDB_tables.bat not found.
+    ::     echo WARNING: External verification script .\check_tables\check_RightDB_tables.bat not found.
     :: )
 )
 
