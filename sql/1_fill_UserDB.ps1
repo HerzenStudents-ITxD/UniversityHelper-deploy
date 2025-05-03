@@ -1,6 +1,7 @@
-# Проверка существования .env файла и загрузка переменных
-$envFilePath = ".\.env"
+# Получаем путь к папке, где лежит сам скрипт
+$envFilePath = Join-Path -Path $PSScriptRoot -ChildPath ".env"
 
+# Проверяем, существует ли файл .env
 if (Test-Path $envFilePath) {
     Write-Host "[DEBUG] Loading environment variables from .env file..."
     $envVars = Get-Content $envFilePath | Where-Object {$_ -match "^\s*[^#].*=\s*.*$"}
