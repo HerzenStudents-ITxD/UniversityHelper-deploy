@@ -66,8 +66,12 @@ function Invoke-SqlCmd {
         Write-Error "ОШИБКА: Не удалось выполнить SQL-команду. Подробности: ${result}"
         return $false
     }
-    # Очистка результата от лишних строк
-    $cleanResult = ($result -split "`n" | Where-Object { $_ -notmatch "^\s*(\(|\-\-|$)" -and $_ -notmatch "rows affected" } | ForEach-Object { $_.Trim() }) -join "`n"
+    # Очистка результата от заголовков, разделителей и лишних строк
+    $cleanResult = ($result -split "`n" | Where-Object { 
+        $_ -notmatch "^\s*(\(|\-\-|$)" -and 
+        $_ -notmatch "rows affected" -and 
+        $_ -notmatch "^name\s*$" 
+    } | ForEach-Object { $_.Trim() }) -join "`n"
     Write-Host "Очищенный результат SQL: ${cleanResult}"
     return $cleanResult
 }
@@ -84,7 +88,7 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
 Write-Host "Проверка существования базы данных ${database}..."
 $checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
 $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-if ($dbExists -notmatch "^RightsDB\s*$") {
+if ($dbExists -notmatch "RightsDB") {
     Write-Error "ОШИБКА: База данных ${database} не найдена. Очищенный список баз данных: ${dbExists}"
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
