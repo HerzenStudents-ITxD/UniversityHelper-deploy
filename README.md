@@ -1,14 +1,25 @@
-❗️ИНСТРУКЦИЯ как не скачивать всё нужное для бэкенда, но пользоваться им (пока у нас нет Linux-сервера) 
+ИНСТРУКЦИЯ по сборке проекта
 
-Скачиваете Docker Desktop, клонируете UniversityHelper-deploy на компьютер и все нужные сервисы:
-AuthService,
-RightsService, 
-UserService
-CommunityService (пока что эти, сообщение будет обновляться)
+# Установите все зависимости
 
-TimetableService, 
-MapService, 
-(в прогрессе поддержки, пока они ничего не умеют)
+Docker Desktop:
+
+PowerShell Core (v7+): https://learn.microsoft.com/ru-ru/powershell/
+
+Все необходимые сервисы включая этот проект:
+- UniversityHelper-deploy: 
+- UniversityHelper-AuthService: 
+- UniversityHelper-RightsService: 
+- UniversityHelper-UserService: 
+- UniversityHelper-CommunityService: 
+- UniversityHelper-FeedbackService: 
+- UniversityHelper-MapService: 
+(пока что эти, сообщение будет обновляться)
+
+В ближайшее будущее (в прогрессе поддержки, пока они ничего не умеют):
+- TimetableService, 
+
+
 
 ## Вариант 1 (ручной)
 
