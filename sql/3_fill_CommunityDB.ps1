@@ -139,7 +139,7 @@ if ($LASTEXITCODE -ne 0) {
 # Verify CommunityDB tables
 Write-Host "Verifying CommunityDB tables..."
 $verifyScriptPath = Join-Path $scriptDir "sql\CommunityDB\check_CommunityDB_tables.bat"
-if (Test-Path $verifyScriptPath)) {
+if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
     # Run BAT script via cmd
     cmd /c $verifyScriptPath
