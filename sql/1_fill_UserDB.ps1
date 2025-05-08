@@ -1,4 +1,3 @@
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # Получаем путь к папке, где лежит сам скрипт
 $envFilePath = Join-Path -Path $PSScriptRoot -ChildPath ".env"
 

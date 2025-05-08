@@ -1,6 +1,4 @@
 # PowerShell Core script for populating all databases
-# Set UTF-8 encoding for proper display of Russian characters
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Write-Host "Starting script to populate all databases..."
 
 # Load environment variables from .env file in the script's directory

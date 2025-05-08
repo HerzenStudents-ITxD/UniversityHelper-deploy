@@ -1,12 +1,12 @@
-# PowerShell Core скрипт для очистки всех баз данных
-Write-Host "Запуск скрипта очистки всех баз данных..."
+# PowerShell Core script for cleaning all databases
+Write-Host "Starting the script to clean all databases..."
 
-# Загрузка переменных окружения из файла .env в директории скрипта
+# Load environment variables from the .env file in the script directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path $scriptDir ".env"
 if (-not (Test-Path $envFile)) {
-    Write-Error "ОШИБКА: Файл .env не найден по пути ${envFile}"
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: .env file not found at path ${envFile}"
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 Get-Content $envFile | ForEach-Object {
@@ -15,37 +15,37 @@ Get-Content $envFile | ForEach-Object {
     }
 }
 
-# Конфигурация из .env
+# Configuration from .env
 $container = $env:DB_CONTAINER
 $password = $env:SA_PASSWORD
 
-# Проверка корректности переменных окружения
+# Validate environment variables
 $requiredVars = @("DB_CONTAINER", "SA_PASSWORD")
 foreach ($var in $requiredVars) {
     if (-not [System.Environment]::GetEnvironmentVariable($var)) {
-        Write-Error "ОШИБКА: Переменная окружения ${var} не установлена."
-        Read-Host "Нажмите Enter для продолжения..."
+        Write-Error "ERROR: Environment variable ${var} is not set."
+        Read-Host "Press Enter to continue..."
         exit 1
     }
 }
 
-# Проверка наличия Docker
+# Check if Docker is installed
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-Error "ОШИБКА: Docker не установлен или отсутствует в PATH."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Docker is not installed or missing from PATH."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Проверка, что контейнер запущен
-Write-Host "Проверка, запущен ли контейнер ${container}..."
+# Check if the container is running
+Write-Host "Checking if container ${container} is running..."
 $containerStatus = docker inspect $container 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "ОШИБКА: Контейнер ${container} не запущен."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Container ${container} is not running."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Функция для выполнения скрипта очистки
+# Function to execute cleanup scripts
 function Execute-CleanScript {
     param (
         [Parameter(Mandatory = $true)]
@@ -55,21 +55,21 @@ function Execute-CleanScript {
     $sqlScript = Join-Path $scriptDir $RelativePath
 
     if (-not (Test-Path $sqlScript)) {
-        Write-Error "ОШИБКА: Скрипт очистки не найден по пути: ${sqlScript}"
+        Write-Error "ERROR: Cleanup script not found at path: ${sqlScript}"
         return $false
     }
 
-    Write-Host "Обработка ${RelativePath}..."
+    Write-Host "Processing ${RelativePath}..."
 
     docker cp $sqlScript "${container}:/temp_clean_script.sql"
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "ОШИБКА: Не удалось скопировать SQL-скрипт в контейнер"
+        Write-Error "ERROR: Failed to copy SQL script to container"
         return $false
     }
 
     docker exec $container /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $password -i /temp_clean_script.sql
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "ОШИБКА: Не удалось выполнить скрипт очистки"
+        Write-Error "ERROR: Failed to execute cleanup script"
         return $false
     }
 
@@ -77,27 +77,27 @@ function Execute-CleanScript {
     return $true
 }
 
-# Ожидание готовности SQL Server
-Write-Host "Ожидание готовности SQL Server..."
+# Wait for SQL Server to be ready
+Write-Host "Waiting for SQL Server to be ready..."
 $maxAttempts = 12
 $attempt = 1
 while ($attempt -le $maxAttempts) {
     $result = docker exec $container /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $password -Q "SELECT 1" 2>$null
     if ($LASTEXITCODE -eq 0) {
-        Write-Host "SQL Server готов!"
+        Write-Host "SQL Server is ready!"
         break
     }
-    Write-Host "SQL Server пока не готов... (Попытка ${attempt}/${maxAttempts})"
+    Write-Host "SQL Server is not ready yet... (Attempt ${attempt}/${maxAttempts})"
     Start-Sleep -Seconds 5
     $attempt++
 }
 if ($attempt -gt $maxAttempts) {
-    Write-Error "ОШИБКА: SQL Server не стал готов после ${maxAttempts} попыток."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: SQL Server did not become ready after ${maxAttempts} attempts."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Выполнение скриптов очистки для каждой базы данных
+# Execute cleanup scripts for each database
 $cleanScripts = @(
     "UserDB\00_clean_UserDB.sql",
     "CommunityDB\00_clean_CommunityDB.sql",
@@ -106,16 +106,16 @@ $cleanScripts = @(
     "MapDB\00_clean_MapDB.sql"
 )
 
-Write-Host "Очистка всех баз данных..."
+Write-Host "Cleaning all databases..."
 foreach ($script in $cleanScripts) {
     $success = Execute-CleanScript -RelativePath $script
     if (-not $success) {
-        Write-Error "ОШИБКА: Не удалось выполнить скрипт очистки ${script}"
-        Read-Host "Нажмите Enter для продолжения..."
+        Write-Error "ERROR: Failed to execute cleanup script ${script}"
+        Read-Host "Press Enter to continue..."
         exit 1
     }
 }
 
-Write-Host "Очистка всех баз данных завершена! ✅"
-Read-Host "Нажмите Enter для продолжения..."
+Write-Host "All databases cleaned successfully! ✅"
+Read-Host "Press Enter to continue..."
 exit 0

@@ -1,12 +1,12 @@
-# PowerShell Core скрипт для настройки базы данных FeedbackDB
-Write-Host "Запуск скрипта заполнения базы данных FeedbackDB..."
+# PowerShell Core script for configuring the FeedbackDB database
+Write-Host "Starting the FeedbackDB database population script..."
 
-# Загрузка переменных окружения из файла .env в директории скрипта
+# Load environment variables from the .env file in the script directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path $scriptDir ".env"
 if (-not (Test-Path $envFile)) {
-    Write-Error "ОШИБКА: Файл .env не найден по пути ${envFile}"
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: .env file not found at path ${envFile}"
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 Get-Content $envFile | ForEach-Object {
@@ -15,124 +15,124 @@ Get-Content $envFile | ForEach-Object {
     }
 }
 
-# Конфигурация из .env
+# Configuration from .env
 $container = $env:DB_CONTAINER
 $password = $env:SA_PASSWORD
 $database = $env:FEEDBACKDB_DB_NAME
 
-# Проверка корректности переменных окружения
+# Validate environment variables
 $requiredVars = @("DB_CONTAINER", "SA_PASSWORD", "FEEDBACKDB_DB_NAME")
 foreach ($var in $requiredVars) {
     if (-not [System.Environment]::GetEnvironmentVariable($var)) {
-        Write-Error "ОШИБКА: Переменная окружения ${var} не установлена."
-        Read-Host "Нажмите Enter для продолжения..."
+        Write-Error "ERROR: Environment variable ${var} is not set."
+        Read-Host "Press Enter to continue..."
         exit 1
     }
 }
 
-# Проверка, что имя базы данных корректно
+# Validate database name
 if ($database -ne "FeedbackDB") {
-    Write-Error "ОШИБКА: Имя базы данных (${database}) не соответствует ожидаемому 'FeedbackDB'."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Database name (${database}) does not match the expected 'FeedbackDB'."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Проверка наличия Docker
+# Check if Docker is installed
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-Error "ОШИБКА: Docker не установлен или отсутствует в PATH."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Docker is not installed or missing from PATH."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Проверка, что контейнер запущен
-Write-Host "Проверка, запущен ли контейнер ${container}..."
+# Check if the container is running
+Write-Host "Checking if container ${container} is running..."
 $containerStatus = docker inspect $container 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "ОШИБКА: Контейнер ${container} не запущен."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Container ${container} is not running."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Функция для выполнения SQL-команд
+# Function to execute SQL commands
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
     $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W"
-    Write-Host "Выполнение SQL: ${Query}"
+    Write-Host "Executing SQL: ${Query}"
     $result = docker exec -it $container bash -c $sqlcmd 2>&1
-    Write-Host "Результат SQL: ${result}"
+    Write-Host "SQL result: ${result}"
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "ОШИБКА: Не удалось выполнить SQL-команду. Подробности: ${result}"
+        Write-Error "ERROR: Failed to execute SQL command. Details: ${result}"
         return $false
     }
-    # Очистка результата от заголовков, разделителей и лишних строк
+    # Clean the result by removing headers, separators, and empty lines
     $cleanResult = ($result -split "`n" | Where-Object { 
         $_ -notmatch "^\s*(\(|\-\-|$)" -and 
         $_ -notmatch "rows affected" -and 
         $_ -notmatch "^(name)\s*$" 
     } | ForEach-Object { $_.Trim() }) -join "`n"
-    Write-Host "Очищенный результат SQL: ${cleanResult}"
+    Write-Host "Cleaned SQL result: ${cleanResult}"
     return $cleanResult
 }
 
-# Проверка подключения к SQL Server
-Write-Host "Проверка подключения к SQL Server..."
+# Test SQL Server connection
+Write-Host "Testing SQL Server connection..."
 $testQuery = "SELECT 1 AS Test"
 if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
-    Read-Host "Нажмите Enter для продолжения..."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Проверка существования базы данных
-Write-Host "Проверка существования базы данных ${database}..."
+# Check if the database exists
+Write-Host "Checking if database ${database} exists..."
 $checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
 $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
 if ($dbExists -notmatch "FeedbackDB") {
-    Write-Error "ОШИБКА: База данных ${database} не найдена. Очищенный список баз данных: ${dbExists}"
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Database ${database} not found. Cleaned list of databases: ${dbExists}"
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Копирование SQL-скрипта в контейнер
-Write-Host "Копирование SQL-скрипта в контейнер..."
+# Copy SQL script to container
+Write-Host "Copying SQL script to container..."
 $sqlScriptPath = Join-Path $scriptDir "FeedbackDB\07_setup_feedback_data.sql"
 if (-not (Test-Path $sqlScriptPath)) {
-    Write-Error "ОШИБКА: SQL-скрипт ${sqlScriptPath} не найден."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: SQL script ${sqlScriptPath} not found."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 docker cp $sqlScriptPath "${container}:/tmp/07_setup_feedback_data.sql"
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "ОШИБКА: Не удалось скопировать SQL-скрипт в контейнер."
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Failed to copy SQL script to container."
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Выполнение SQL-скрипта
-Write-Host "Настройка таблиц и данных FeedbackDB..."
+# Execute SQL script
+Write-Host "Configuring FeedbackDB tables and data..."
 $setupQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${database} -i /tmp/07_setup_feedback_data.sql"
 $result = docker exec -it $container bash -c $setupQuery 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "ОШИБКА: Не удалось выполнить SQL-скрипт. Подробности: ${result}"
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: Failed to execute SQL script. Details: ${result}"
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Проверка таблиц FeedbackDB
-Write-Host "Проверка таблиц FeedbackDB..."
+# Verify FeedbackDB tables
+Write-Host "Verifying FeedbackDB tables..."
 $verifyScriptPath = Join-Path $scriptDir "sql\FeedbackDB\check_FeedbackDB_tables.bat"
-if (Test-Path $verifyScriptPath) {
-    Write-Host "Выполнение внешнего скрипта проверки..."
-    # Запуск BAT-скрипта через cmd
+if (Test-Path $verifyScriptPath)) {
+    Write-Host "Executing external verification script..."
+    # Run BAT script via cmd
     cmd /c $verifyScriptPath
     if ($LASTEXITCODE -ne 0) {
-        Write-Error "ОШИБКА: Скрипт проверки check_FeedbackDB_tables.bat завершился с ошибкой."
-        Read-Host "Нажмите Enter для продолжения..."
+        Write-Error "ERROR: Verification script check_FeedbackDB_tables.bat failed."
+        Read-Host "Press Enter to continue..."
         exit 1
     }
 } else {
-    Write-Warning "ПРЕДУПРЕЖДЕНИЕ: Скрипт проверки ${verifyScriptPath} не найден."
+    Write-Warning "WARNING: Verification script ${verifyScriptPath} not found."
 }
 
-Write-Host "Готово ✅"
-Read-Host "Нажмите Enter для продолжения..."
+Write-Host "Done ✅"
+Read-Host "Press Enter to continue..."
 exit 0
