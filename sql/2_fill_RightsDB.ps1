@@ -59,20 +59,21 @@ if ($LASTEXITCODE -ne 0) {
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
 
-    # Экранируем кавычки и переносим команду внутрь docker exec
     $escapedQuery = $Query.Replace('"', '\"')
-    $sql = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $password -d $Database -Q \"$escapedQuery\" -W -s',' -I"
-    
-    Write-Host "Executing SQL inside container: $escapedQuery"
-    
-    $result = docker exec $container bash -c "$sql" 2>&1
-    
+
+    $command = @"
+docker exec $container bash -c "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$password' -d $Database -Q \"$escapedQuery\" -W -s',' -I"
+"@
+
+    Write-Host "Executing: $command"
+
+    $result = Invoke-Expression $command 2>&1
+
     if ($LASTEXITCODE -ne 0 -or $result -match "Sqlcmd: Error") {
         Write-Error "ERROR: Failed to execute SQL command. Details: $result"
         return $false
     }
 
-    # Очистка вывода от лишних строк
     $cleanResult = ($result -split "`n" | Where-Object {
         $_ -notmatch "^\s*$" -and
         $_ -notmatch "^----" -and
@@ -82,6 +83,7 @@ function Invoke-SqlCmd {
 
     return $cleanResult
 }
+
 
 
 # Test SQL Server connection
