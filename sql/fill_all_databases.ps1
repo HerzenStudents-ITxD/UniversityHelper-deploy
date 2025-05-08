@@ -1,14 +1,14 @@
-# PowerShell Core скрипт для заполнения всех баз данных
-# Установка кодировки UTF-8 для корректного отображения русских символов
+# PowerShell Core script for populating all databases
+# Set UTF-8 encoding for proper display of Russian characters
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
-Write-Host "Запуск скрипта заполнения всех баз данных..."
+Write-Host "Starting script to populate all databases..."
 
-# Загрузка переменных окружения из файла .env в директории скрипта
+# Load environment variables from .env file in the script's directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path $scriptDir ".env"
 if (-not (Test-Path $envFile)) {
-    Write-Error "ОШИБКА: Файл .env не найден по пути ${envFile}"
-    Read-Host "Нажмите Enter для продолжения..."
+    Write-Error "ERROR: .env file not found at ${envFile}"
+    Read-Host "Press Enter to continue..."
     exit 1
 }
 Get-Content $envFile | ForEach-Object {
@@ -17,11 +17,11 @@ Get-Content $envFile | ForEach-Object {
     }
 }
 
-# Отладочная информация о кодировке
+# Debug information about encoding
 Write-Host "[Debug] Script directory: $scriptDir"
 Write-Host "[Debug] Current console output encoding: $([Console]::OutputEncoding.BodyName)"
 
-# Список PowerShell-скриптов для выполнения
+# List of PowerShell scripts to execute
 $scripts = @(
     "1_fill_UserDB.ps1",
     "2_fill_RightsDB.ps1",
@@ -29,7 +29,7 @@ $scripts = @(
     "4_fill_FeedbackDB.ps1"
 )
 
-# Функция для выполнения одного скрипта
+# Function to run a single script
 function Run-Script {
     param (
         [Parameter(Mandatory = $true)]
@@ -47,24 +47,29 @@ function Run-Script {
         exit 1
     }
 
-    # Прямой запуск скрипта в текущей сессии для сохранения кодировки
-    & $scriptPath
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "[Error] Script '$scriptPath' failed with code $LASTEXITCODE"
+    # Run script in current session to preserve encoding
+    try {
+        & $scriptPath
+        if ($LASTEXITCODE -ne 0) {
+            Write-Error "[Error] Script '$scriptPath' failed with exit code $LASTEXITCODE"
+            Read-Host "Press Enter to continue..."
+            exit $LASTEXITCODE
+        }
+        Write-Host "[Success] $scriptPath completed"
+    } catch {
+        Write-Error "[Error] Exception occurred while running '$scriptPath': $_"
         Read-Host "Press Enter to continue..."
-        exit $LASTEXITCODE
+        exit 1
     }
-
-    Write-Host "[Success] $scriptPath completed"
     Write-Host ""
 }
 
-# Последовательное выполнение скриптов
+# Execute scripts sequentially
 foreach ($script in $scripts) {
     Run-Script -ScriptName $script
 }
 
 Write-Host ""
-Write-Host "Все базы данных успешно заполнены! ✅"
-Read-Host "Нажмите Enter для выхода"
+Write-Host "All databases successfully populated! ✅"
+Read-Host "Press Enter to exit"
 exit 0

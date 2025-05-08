@@ -1,6 +1,5 @@
 USE RightsDB;
 
-
 -- Declare variables
 DECLARE @Now DATETIME2 = GETUTCDATE();
 DECLARE @AdminUserId UNIQUEIDENTIFIER = '11111111-1111-1111-1111-111111111111';
@@ -53,7 +52,7 @@ INSERT INTO @Rights (RightId, NameEn, NameRu, DescriptionEn, DescriptionRu) VALU
 -- Insert rights (assuming Rights table exists)
 IF NOT EXISTS (SELECT 1 FROM Rights WHERE RightId IN (SELECT RightId FROM @Rights))
 BEGIN
-    INSERT INTO Rights (RightId, CreatedBy) -- Assuming Rights table has these fields
+    INSERT INTO Rights (RightId, CreatedBy)
     SELECT RightId, @AdminUserId
     FROM @Rights;
 END;
