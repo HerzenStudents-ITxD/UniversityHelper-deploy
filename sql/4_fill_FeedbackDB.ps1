@@ -75,22 +75,22 @@ function Invoke-SqlCmd {
 }
 
 # Test SQL Server connection
-Write-Host "Testing SQL Server connection..."
-$testQuery = "SELECT 1 AS Test"
-if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
-    Read-Host "Press Enter to continue..."
-    exit 1
-}
+# Write-Host "Testing SQL Server connection..."
+# $testQuery = "SELECT 1 AS Test"
+# if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
+#     Read-Host "Press Enter to continue..."
+#     exit 1
+# }
 
 # Check if the database exists
-Write-Host "Checking if database ${database} exists..."
-$checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
-$dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-if ($dbExists -notmatch "FeedbackDB") {
-    Write-Error "ERROR: Database ${database} not found. Cleaned list of databases: ${dbExists}"
-    Read-Host "Press Enter to continue..."
-    exit 1
-}
+# Write-Host "Checking if database ${database} exists..."
+# $checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
+# $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
+# if ($dbExists -notmatch "FeedbackDB") {
+#     Write-Error "ERROR: Database ${database} not found. Cleaned list of databases: ${dbExists}"
+#     Read-Host "Press Enter to continue..."
+#     exit 1
+# }
 
 # Copy SQL script to container
 Write-Host "Copying SQL script to container..."
