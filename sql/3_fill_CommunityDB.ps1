@@ -1,3 +1,4 @@
+[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 # PowerShell Core скрипт для настройки базы данных CommunityDB
 Write-Host "Запуск скрипта заполнения базы данных CommunityDB..."
 
