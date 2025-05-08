@@ -198,6 +198,8 @@ GROUP BY r.Id, rl.Name, r.IsActive;
 "@
 if (-not (Invoke-SqlCmd $verifyAdminQuery)) {
     Write-Error "ОШИБКА: Не удалось проверить настройку прав администратора."
+    Read-Host "Нажмите Enter для продолжения..."
+    exit 1
 }
 
 # Проверка целостности данных
@@ -213,6 +215,8 @@ SELECT 'UsersRoles', CASE WHEN OBJECT_ID('UsersRoles') IS NOT NULL THEN (SELECT 
 "@
 if (-not (Invoke-SqlCmd $verifyIntegrityQuery)) {
     Write-Error "ОШИБКА: Не удалось проверить целостность данных."
+    Read-Host "Нажмите Enter для продолжения..."
+    exit 1
 }
 
 # Отображение финального содержимого таблиц
@@ -222,6 +226,8 @@ foreach ($table in $tables) {
     $query = "USE ${database}; IF OBJECT_ID('${table}') IS NOT NULL SELECT * FROM ${table};"
     if (-not (Invoke-SqlCmd $query)) {
         Write-Error "ОШИБКА: Не удалось отобразить финальное содержимое таблицы ${table}."
+        Read-Host "Нажмите Enter для продолжения..."
+        exit 1
     }
 }
 
