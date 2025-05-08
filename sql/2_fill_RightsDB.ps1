@@ -84,14 +84,14 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
 }
 
 # Check if database exists
-# Write-Host "Checking if database ${database} exists..."
-# $checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
-# $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-# if (-not $dbExists -or $dbExists -notlike "*RightsDB*") {
-#     Write-Error "ERROR: Database ${database} not found. Available databases: ${dbExists}"
-#     Read-Host "Press Enter to continue..."
-#     exit 1
-# }
+Write-Host "Checking if database ${database} exists..."
+$checkDbQuery = "SELECT COUNT(*) FROM sys.databases WHERE name = '${database}'"
+$dbCount = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
+if (-not $dbCount -or [int]$dbCount -eq 0) {
+    Write-Error "ERROR: Database ${database} not found."
+    Read-Host "Press Enter to continue..."
+    exit 1
+}
 
 # Check existing tables
 Write-Host "Checking existing tables in ${database}..."
