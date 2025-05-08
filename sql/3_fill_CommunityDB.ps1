@@ -32,11 +32,11 @@ foreach ($var in $requiredVars) {
 }
 
 # Validating database name
-if ($database -ne "CommunityDB") {
-    Write-Error "ERROR: Database name (${database}) does not match expected 'CommunityDB'."
-    Read-Host "Press Enter to continue..."
-    exit 1
-}
+# if ($database -ne "CommunityDB") {
+#     Write-Error "ERROR: Database name (${database}) does not match expected 'CommunityDB'."
+#     Read-Host "Press Enter to continue..."
+#     exit 1
+# }
 
 # Checking Docker availability
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
