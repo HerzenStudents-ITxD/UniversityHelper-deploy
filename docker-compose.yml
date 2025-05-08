@@ -137,8 +137,6 @@ services:
       - rabbitmq
       - sqlserver_db
       - seq
-      - seqServerUrl=http://seq
-      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     build:
       context: ../UniversityHelper-RightsService
       dockerfile: Dockerfile
@@ -150,6 +148,8 @@ services:
       - RabbitMQ_VirtualHost=/
       - RabbitMQ_Username=UniversityHelper.RightsService
       - RabbitMQ_Password=1234
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     #   - 51737:80
     #   - 44345:443
     networks:
