@@ -29,6 +29,17 @@ services:
     networks:
       - default
 
+  seq:
+    platform: linux/amd64
+    image: datalust/seq:latest
+    container_name: seq
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - 5341:80
+    networks:
+      - default
+
   rabbitmq:
     platform: linux/amd64
    # login guest:guest
@@ -90,6 +101,7 @@ services:
     depends_on:
       - rabbitmq
       - sqlserver_db
+      - seq
     build:
       context: ../UniversityHelper-UserService
       dockerfile: Dockerfile
@@ -120,6 +132,7 @@ services:
     depends_on:
       - rabbitmq
       - sqlserver_db
+      - seq
     build:
       context: ../UniversityHelper-RightsService
       dockerfile: Dockerfile
@@ -143,6 +156,7 @@ services:
     depends_on:
       - rabbitmq
       - sqlserver_db
+      - seq
       - userservice
       - rightsservice
     build:
@@ -169,6 +183,7 @@ services:
     depends_on:
       - rabbitmq
       - sqlserver_db
+      - seq
     build:
       context: ../UniversityHelper-CommunityService
       dockerfile: Dockerfile
@@ -193,6 +208,7 @@ services:
     depends_on:
       - rabbitmq
       - sqlserver_db
+      - seq
     build:
       context: ../UniversityHelper-FeedbackService
       dockerfile: Dockerfile
@@ -216,6 +232,7 @@ services:
     depends_on:
       - rabbitmq
       - sqlserver_db
+      - seq
     build:
       context: ../UniversityHelper-MapService
       dockerfile: Dockerfile
