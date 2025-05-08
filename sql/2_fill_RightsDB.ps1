@@ -58,7 +58,7 @@ if ($LASTEXITCODE -ne 0) {
 # Function to execute SQL commands
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
-    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W"
+    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W -I"
     Write-Host "Executing SQL: ${Query}"
     $result = docker exec $container bash -c $sqlcmd 2>&1
     if ($LASTEXITCODE -ne 0) {
@@ -85,9 +85,9 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
 
 # Check if database exists
 Write-Host "Checking if database ${database} exists..."
-$checkDbQuery = "SELECT name FROM sys.databases WHERE name = 'RightsDB'"
+$checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
 $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-if ($dbExists -notmatch "RightsDB") {
+if (-not $dbExists -or $dbExists -notlike "*RightsDB*") {
     Write-Error "ERROR: Database ${database} not found. Available databases: ${dbExists}"
     Read-Host "Press Enter to continue..."
     exit 1
