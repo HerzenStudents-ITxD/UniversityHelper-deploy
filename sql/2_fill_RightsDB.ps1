@@ -1,11 +1,11 @@
-# PowerShell Core script for configuring the RightsDB database
-Write-Host "Starting the RightsDB database configuration script..."
+# PowerShell Core script for setting up the RightsDB database
+Write-Host "Starting the RightsDB database population script..."
 
 # Load environment variables from the .env file in the script directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path $scriptDir ".env"
 if (-not (Test-Path $envFile)) {
-    Write-Error "ERROR: .env file not found at path ${envFile}"
+    Write-Error "ERROR: .env file not found at ${envFile}"
     Read-Host "Press Enter to continue..."
     exit 1
 }
@@ -32,21 +32,21 @@ foreach ($var in $requiredVars) {
     }
 }
 
-# Validate database name
+# Verify database name
 if ($database -ne "RightsDB") {
-    Write-Error "ERROR: Database name (${database}) does not match the expected 'RightsDB'."
+    Write-Error "ERROR: Database name (${database}) does not match expected 'RightsDB'."
     Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Check if Docker is installed
+# Check for Docker
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
-    Write-Error "ERROR: Docker is not installed or missing from PATH."
+    Write-Error "ERROR: Docker is not installed or not in PATH."
     Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Check if the container is running
+# Check if container is running
 Write-Host "Checking if container ${container} is running..."
 $containerStatus = docker inspect $container 2>&1
 if ($LASTEXITCODE -ne 0) {
@@ -58,51 +58,41 @@ if ($LASTEXITCODE -ne 0) {
 # Function to execute SQL commands
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
-
-    $escapedQuery = $Query.Replace('"', '\"')
-
-    $command = @"
-docker exec $container bash -c "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$password' -d $Database -Q \"$escapedQuery\" -W -s',' -I"
-"@
-
-    Write-Host "Executing: $command"
-
-    $result = Invoke-Expression $command 2>&1
-
-    if ($LASTEXITCODE -ne 0 -or $result -match "Sqlcmd: Error") {
-        Write-Error "ERROR: Failed to execute SQL command. Details: $result"
+    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W"
+    Write-Host "Executing SQL: ${Query}"
+    $result = docker exec -it $container bash -c $sqlcmd 2>&1
+    Write-Host "SQL Result: ${result}"
+    if ($LASTEXITCODE -ne 0) {
+        Write-Error "ERROR: Failed to execute SQL command. Details: ${result}"
         return $false
     }
-
-    $cleanResult = ($result -split "`n" | Where-Object {
-        $_ -notmatch "^\s*$" -and
-        $_ -notmatch "^----" -and
-        $_ -notmatch "rows affected" -and
-        $_ -notmatch "^name\s*$"
+    # Clean result from headers, separators, and empty lines
+    $cleanResult = ($result -split "`n" | Where-Object { 
+        $_ -notmatch "^\s*(\(|\-\-|$)" -and 
+        $_ -notmatch "rows affected" -and 
+        $_ -notmatch "^name\s*$" 
     } | ForEach-Object { $_.Trim() }) -join "`n"
-
+    Write-Host "Cleaned SQL Result: ${cleanResult}"
     return $cleanResult
 }
 
-
-
 # Test SQL Server connection
-# Write-Host "Testing SQL Server connection..."
-# $testQuery = "SELECT 1 AS Test"
-# if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
-#     Read-Host "Press Enter to continue..."
-#     exit 1
-# }
+Write-Host "Testing SQL Server connection..."
+$testQuery = "SELECT 1 AS Test"
+if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
+    Read-Host "Press Enter to continue..."
+    exit 1
+}
 
-# Check if the database exists
-# Write-Host "Checking if database ${database} exists..."
-# $checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
-# $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-# if ($dbExists -notmatch "RightsDB") {
-#     Write-Error "ERROR: Database ${database} not found. Cleaned list of databases: ${dbExists}"
-#     Read-Host "Press Enter to continue..."
-#     exit 1
-# }
+# Check if database exists
+Write-Host "Checking if database ${database} exists..."
+$checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
+$dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
+if ($dbExists -notmatch "RightsDB") {
+    Write-Error "ERROR: Database ${database} not found. Cleaned database list: ${dbExists}"
+    Read-Host "Press Enter to continue..."
+    exit 1
+}
 
 # Check existing tables
 Write-Host "Checking existing tables in database ${database}..."
@@ -152,8 +142,8 @@ foreach ($table in $tables) {
     }
 }
 
-# Clean up existing data
-Write-Host "Cleaning up existing data..."
+# Clean existing data
+Write-Host "Cleaning existing data..."
 $cleanupQuery = @"
 USE ${database};
 IF OBJECT_ID('UsersRoles') IS NOT NULL DELETE FROM UsersRoles WHERE RoleId = '${adminRoleId}';
@@ -183,12 +173,12 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# Configure admin rights
-Write-Host "Configuring admin rights..."
+# Set up admin rights
+Write-Host "Setting up admin rights..."
 $setupAdminQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${database} -i /tmp/05_setup_admin_rights.sql"
 $result = docker exec -it $container bash -c $setupAdminQuery 2>&1
 if ($LASTEXITCODE -ne 0) {
-    Write-Error "ERROR: Failed to configure admin rights. Details: ${result}"
+    Write-Error "ERROR: Failed to set up admin rights. Details: ${result}"
     Read-Host "Press Enter to continue..."
     exit 1
 }
@@ -208,8 +198,6 @@ GROUP BY r.Id, rl.Name, r.IsActive;
 "@
 if (-not (Invoke-SqlCmd $verifyAdminQuery)) {
     Write-Error "ERROR: Failed to verify admin rights setup."
-    Read-Host "Press Enter to continue..."
-    exit 1
 }
 
 # Verify data integrity
@@ -221,12 +209,10 @@ SELECT 'RolesLocalizations', CASE WHEN OBJECT_ID('RolesLocalizations') IS NOT NU
 SELECT 'Rights', CASE WHEN OBJECT_ID('Rights') IS NOT NULL THEN (SELECT COUNT(*) FROM Rights WHERE CreatedBy = '${adminUserId}') ELSE 0 END UNION ALL
 SELECT 'RightsLocalizations', CASE WHEN OBJECT_ID('RightsLocalizations') IS NOT NULL THEN (SELECT COUNT(*) FROM RightsLocalizations WHERE RightId IN (SELECT RightId FROM Rights WHERE CreatedBy = '${adminUserId}')) ELSE 0 END UNION ALL
 SELECT 'RolesRights', CASE WHEN OBJECT_ID('RolesRights') IS NOT NULL THEN (SELECT COUNT(*) FROM RolesRights WHERE RoleId = '${adminRoleId}') ELSE 0 END UNION ALL
-SELECT 'UsersRoles', CASE WHEN OBJECT_ID('UsersRoles') IS NOT NULL THEN (SELECT COUNT(*) FROM UsersRoles WHERE RoleId = '${adminRoleId}') ELSE 0 END;
+SELECT 'UsersRoles', CASE WHEN OBJECT_ID('UsersRoles') IS NOT NULL THEN (SELECT COUNT(*) FROM UsersRoles WHERE RoleId = '${adminRoleId}') ELSE 0 jejune ELSE 0 END;
 "@
 if (-not (Invoke-SqlCmd $verifyIntegrityQuery)) {
     Write-Error "ERROR: Failed to verify data integrity."
-    Read-Host "Press Enter to continue..."
-    exit 1
 }
 
 # Display final table contents
@@ -236,19 +222,18 @@ foreach ($table in $tables) {
     $query = "USE ${database}; IF OBJECT_ID('${table}') IS NOT NULL SELECT * FROM ${table};"
     if (-not (Invoke-SqlCmd $query)) {
         Write-Error "ERROR: Failed to display final contents of table ${table}."
-        Read-Host "Press Enter to continue..."
-        exit 1
     }
 }
 
-# Run external verification script if it exists
+# Execute external verification script if it exists
 $verifyScriptPath = Join-Path $scriptDir "sql\RightsDB\check_RightsDB_tables.ps1"
 if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
     & $verifyScriptPath
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: External verification script failed."
-        Read-Host "Press Enter to continue..."
+        Read-Hos
+t "Press Enter to continue..."
         exit 1
     }
 } else {
