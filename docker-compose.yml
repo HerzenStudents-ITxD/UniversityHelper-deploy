@@ -55,6 +55,8 @@ services:
       - RABBITMQ_DEFAULT_USER=guest
       - RABBITMQ_DEFAULT_PASS=guest
       - RABBITMQ_NODENAME=rabbit@rabbitmq
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     ports:
       - "4370:4369"
       - "5671:5671"
@@ -113,6 +115,8 @@ services:
       - RabbitMQ_VirtualHost=/
       - RabbitMQ_Username=UniversityHelper.UserService
       - RabbitMQ_Password=1234
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     # ports:
     #   - 51736:80
 #      - 44344:443
@@ -133,6 +137,8 @@ services:
       - rabbitmq
       - sqlserver_db
       - seq
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     build:
       context: ../UniversityHelper-RightsService
       dockerfile: Dockerfile
@@ -170,6 +176,8 @@ services:
       - RabbitMQ_VirtualHost=/
       - RabbitMQ_Username=UniversityHelper.AuthService
       - RabbitMQ_Password=1234
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     # ports:
     #   - 51738:80
     #   - 44346:443
@@ -195,6 +203,8 @@ services:
       - RabbitMQ_VirtualHost=/
       - RabbitMQ_Username=UniversityHelper.CommunityService
       - RabbitMQ_Password=1234
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     # ports:
     #   - 51737:80
     #   - 44345:443
@@ -220,6 +230,8 @@ services:
       - RabbitMQ_VirtualHost=/
       - RabbitMQ_Username=UniversityHelper.FeedbackService
       - RabbitMQ_Password=1234
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     #   - 51737:80
     #   - 44345:443
     networks:
@@ -244,6 +256,8 @@ services:
       - RabbitMQ_VirtualHost=/
       - RabbitMQ_Username=UniversityHelper.MapService
       - RabbitMQ_Password=1234
+      - seqServerUrl=http://seq
+      - seqApiKey=9xXtgAh5JiClaAE1Fow5
     # ports:
     #   - 51737:80
     #   - 44345:443
