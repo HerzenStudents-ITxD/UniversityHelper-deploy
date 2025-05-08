@@ -1,7 +1,7 @@
 # PowerShell Core script for configuring the CommunityDB database
 Write-Host "Starting the CommunityDB database population script..."
 
-# Load environment variables from the .env file in the script directory
+# Loading environment variables from the .env file in the script directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path $scriptDir ".env"
 if (-not (Test-Path $envFile)) {
@@ -21,7 +21,7 @@ $password = $env:SA_PASSWORD
 $database = $env:COMMUNITYDB_DB_NAME
 $userId = $env:COMMUNITYDB_ADMIN_USER_ID
 
-# Validate environment variables
+# Validating environment variables
 $requiredVars = @("DB_CONTAINER", "SA_PASSWORD", "COMMUNITYDB_DB_NAME", "COMMUNITYDB_ADMIN_USER_ID")
 foreach ($var in $requiredVars) {
     if (-not [System.Environment]::GetEnvironmentVariable($var)) {
@@ -31,21 +31,21 @@ foreach ($var in $requiredVars) {
     }
 }
 
-# Validate database name
+# Validating database name
 if ($database -ne "CommunityDB") {
-    Write-Error "ERROR: Database name (${database}) does not match the expected 'CommunityDB'."
+    Write-Error "ERROR: Database name (${database}) does not match expected 'CommunityDB'."
     Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Check if Docker is installed
+# Checking Docker availability
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     Write-Error "ERROR: Docker is not installed or missing from PATH."
     Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Check if the container is running
+# Checking if container is running
 Write-Host "Checking if container ${container} is running..."
 $containerStatus = docker inspect $container 2>&1
 if ($LASTEXITCODE -ne 0) {
@@ -65,7 +65,7 @@ function Invoke-SqlCmd {
         Write-Error "ERROR: Failed to execute SQL command. Details: ${result}"
         return $false
     }
-    # Clean the result by removing headers, separators, and empty lines
+    # Cleaning up the result from headers, separators and extra lines
     $cleanResult = ($result -split "`n" | Where-Object { 
         $_ -notmatch "^\s*(\(|\-\-|$)" -and 
         $_ -notmatch "rows affected" -and 
@@ -75,7 +75,7 @@ function Invoke-SqlCmd {
     return $cleanResult
 }
 
-# Test SQL Server connection
+# Testing SQL Server connection
 Write-Host "Testing SQL Server connection..."
 $testQuery = "SELECT 1 AS Test"
 if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
@@ -83,17 +83,17 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
     exit 1
 }
 
-# Check if the database exists
+# Checking if database exists
 Write-Host "Checking if database ${database} exists..."
 $checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
 $dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
 if ($dbExists -notmatch "CommunityDB") {
-    Write-Error "ERROR: Database ${database} not found. Cleaned list of databases: ${dbExists}"
+    Write-Error "ERROR: Database ${database} not found. Cleaned database list: ${dbExists}"
     Read-Host "Press Enter to continue..."
     exit 1
 }
 
-# Check existing tables
+# Checking existing tables
 Write-Host "Checking existing tables in database ${database}..."
 $checkTablesQuery = "USE ${database}; SELECT 'Communities' AS TableName, COUNT(*) AS Count FROM Communities UNION ALL SELECT 'Agents', COUNT(*) FROM Agents UNION ALL SELECT 'HiddenCommunities', COUNT(*) FROM HiddenCommunities UNION ALL SELECT 'News', COUNT(*) FROM News UNION ALL SELECT 'NewsPhoto', COUNT(*) FROM NewsPhoto UNION ALL SELECT 'Participating', COUNT(*) FROM Participating;"
 if (-not (Invoke-SqlCmd $checkTablesQuery)) {
@@ -102,7 +102,7 @@ if (-not (Invoke-SqlCmd $checkTablesQuery)) {
     exit 1
 }
 
-# Clean up existing data
+# Cleaning up existing data
 Write-Host "Cleaning up existing data..."
 $cleanupQuery = "USE ${database}; DELETE FROM Participating WHERE UserId = '${userId}'; DELETE FROM News WHERE AuthorId = '${userId}'; DELETE FROM Agents WHERE AgentId = '${userId}'; DELETE FROM HiddenCommunities WHERE UserId = '${userId}'; DELETE FROM Communities WHERE CreatedBy = '${userId}';"
 if (-not (Invoke-SqlCmd $cleanupQuery)) {
@@ -111,7 +111,7 @@ if (-not (Invoke-SqlCmd $cleanupQuery)) {
     exit 1
 }
 
-# Copy SQL script to container
+# Copying SQL script to container
 Write-Host "Copying SQL script to container..."
 $sqlScriptPath = Join-Path $scriptDir "CommunityDB\06_setup_community_data.sql"
 if (-not (Test-Path $sqlScriptPath)) {
@@ -126,7 +126,7 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# Execute SQL script
+# Executing SQL script
 Write-Host "Executing SQL script..."
 $setupQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${database} -i /tmp/06_setup_community_data.sql"
 $result = docker exec -it $container bash -c $setupQuery 2>&1
@@ -136,12 +136,12 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
-# Verify CommunityDB tables
+# Verifying CommunityDB tables
 Write-Host "Verifying CommunityDB tables..."
 $verifyScriptPath = Join-Path $scriptDir "sql\CommunityDB\check_CommunityDB_tables.bat"
 if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
-    # Run BAT script via cmd
+    # Running BAT script via cmd
     cmd /c $verifyScriptPath
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: Verification script check_CommunityDB_tables.bat failed."
