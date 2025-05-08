@@ -59,18 +59,18 @@ function Invoke-SqlCmd {
     $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W"
     Write-Host "Executing SQL: ${Query}"
     $result = docker exec -it $container bash -c $sqlcmd 2>&1
-    Write-Host "SQL result: ${result}"
+    Write-Host "SQL Result: ${result}"
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: Failed to execute SQL command. Details: ${result}"
         return $false
     }
-    # Clean the result by removing headers, separators, and empty lines
+    # Clean result from headers, separators, and empty lines
     $cleanResult = ($result -split "`n" | Where-Object { 
         $_ -notmatch "^\s*(\(|\-\-|$)" -and 
         $_ -notmatch "rows affected" -and 
-        $_ -notmatch "^(name)\s*$" 
+        $_ -notmatch "^name\s*$" 
     } | ForEach-Object { $_.Trim() }) -join "`n"
-    Write-Host "Cleaned SQL result: ${cleanResult}"
+    Write-Host "Cleaned SQL Result: ${cleanResult}"
     return $cleanResult
 }
 
