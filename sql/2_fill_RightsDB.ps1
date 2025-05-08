@@ -58,23 +58,31 @@ if ($LASTEXITCODE -ne 0) {
 # Function to execute SQL commands
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
-    $escapedQuery = $Query.Replace("`"", "`"`"")
-    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"$escapedQuery`" -s',' -W -I"
-    Write-Host "Executing SQL: ${Query}"
-    $result = docker exec $container bash -c "`"$sqlcmd`"" 2>&1
-    if ($LASTEXITCODE -ne 0) {
-        Write-Error "ERROR: Failed to execute SQL command. Details: ${result}"
+
+    # Экранируем кавычки и переносим команду внутрь docker exec
+    $escapedQuery = $Query.Replace('"', '\"')
+    $sql = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $password -d $Database -Q \"$escapedQuery\" -W -s',' -I"
+    
+    Write-Host "Executing SQL inside container: $escapedQuery"
+    
+    $result = docker exec $container bash -c "$sql" 2>&1
+    
+    if ($LASTEXITCODE -ne 0 -or $result -match "Sqlcmd: Error") {
+        Write-Error "ERROR: Failed to execute SQL command. Details: $result"
         return $false
     }
-    # Clean the result by removing headers, separators, and empty lines
-    $cleanResult = ($result -split "`n" | Where-Object { 
-        $_ -notmatch "^\s*(\(|\-\-|$)" -and 
-        $_ -notmatch "rows affected" -and 
-        $_ -notmatch "^name\s*$" 
+
+    # Очистка вывода от лишних строк
+    $cleanResult = ($result -split "`n" | Where-Object {
+        $_ -notmatch "^\s*$" -and
+        $_ -notmatch "^----" -and
+        $_ -notmatch "rows affected" -and
+        $_ -notmatch "^name\s*$"
     } | ForEach-Object { $_.Trim() }) -join "`n"
-    Write-Host "Cleaned SQL result: ${cleanResult}"
+
     return $cleanResult
 }
+
 
 # Test SQL Server connection
 # Write-Host "Testing SQL Server connection..."
