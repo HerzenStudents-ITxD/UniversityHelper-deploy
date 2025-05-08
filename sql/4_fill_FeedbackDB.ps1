@@ -120,7 +120,7 @@ if ($LASTEXITCODE -ne 0) {
 # Verify FeedbackDB tables
 Write-Host "Verifying FeedbackDB tables..."
 $verifyScriptPath = Join-Path $scriptDir "sql\FeedbackDB\check_FeedbackDB_tables.bat"
-if (Test-Path $verifyScriptPath)) {
+if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
     # Run BAT script via cmd
     cmd /c $verifyScriptPath
