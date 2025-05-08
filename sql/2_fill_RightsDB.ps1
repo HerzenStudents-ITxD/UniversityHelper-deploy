@@ -58,9 +58,10 @@ if ($LASTEXITCODE -ne 0) {
 # Function to execute SQL commands
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
-    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W -I"
+    $escapedQuery = $Query.Replace("`"", "`"`"")
+    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"$escapedQuery`" -s',' -W -I"
     Write-Host "Executing SQL: ${Query}"
-    $result = docker exec $container bash -c $sqlcmd 2>&1
+    $result = docker exec $container bash -c "`"$sqlcmd`"" 2>&1
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ERROR: Failed to execute SQL command. Details: ${result}"
         return $false
