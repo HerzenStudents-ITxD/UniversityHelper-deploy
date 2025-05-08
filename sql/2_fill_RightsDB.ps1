@@ -232,7 +232,7 @@ foreach ($table in $tables) {
 
 # Run external verification script if it exists
 $verifyScriptPath = Join-Path $scriptDir "sql\RightsDB\check_RightsDB_tables.ps1"
-if (Test-Path $verifyScriptPath)) {
+if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
     & $verifyScriptPath
     if ($LASTEXITCODE -ne 0) {
