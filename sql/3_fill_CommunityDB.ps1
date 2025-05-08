@@ -1,5 +1,4 @@
 # PowerShell Core скрипт для настройки базы данных CommunityDB
-[Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 Write-Host "Запуск скрипта заполнения базы данных CommunityDB..."
 
 # Загрузка переменных окружения из файла .env в директории скрипта
@@ -32,7 +31,7 @@ foreach ($var in $requiredVars) {
     }
 }
 
-# Проверка, что имя базы данных коррек healingly
+# Проверка, что имя базы данных корректно
 if ($database -ne "CommunityDB") {
     Write-Error "ОШИБКА: Имя базы данных (${database}) не соответствует ожидаемому 'CommunityDB'."
     Read-Host "Нажмите Enter для продолжения..."
@@ -58,9 +57,10 @@ if ($LASTEXITCODE -ne 0) {
 # Функция для выполнения SQL-команд
 function Invoke-SqlCmd {
     param($Query, $Database = $database)
-    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `\"${Query}`\" -s',' -W -I"
+    $sqlcmd = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${Database} -Q `"${Query}`" -s',' -W"
     Write-Host "Выполнение SQL: ${Query}"
-    $result = docker exec $container bash -c $sqlcmd 2>&1
+    $result = docker exec -it $container bash -c $sqlcmd 2>&1
+    Write-Host "Результат SQL: ${result}"
     if ($LASTEXITCODE -ne 0) {
         Write-Error "ОШИБКА: Не удалось выполнить SQL-команду. Подробности: ${result}"
         return $false
@@ -85,17 +85,17 @@ if (-not (Invoke-SqlCmd -Query $testQuery -Database "master")) {
 
 # Проверка существования базы данных
 Write-Host "Проверка существования базы данных ${database}..."
-$checkDbQuery = "SELECT COUNT(*) FROM sys.databases WHERE name = '${database}'"
-$dbCount = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
-if (-not $dbCount -or [int]$dbCount -eq 0) {
-    Write-Error "ОШИБКА: База данных ${database} не найдена."
+$checkDbQuery = "SELECT name FROM sys.databases WHERE name = '${database}'"
+$dbExists = Invoke-SqlCmd -Query $checkDbQuery -Database "master"
+if ($dbExists -notmatch "CommunityDB") {
+    Write-Error "ОШИБКА: База данных ${database} не найдена. Очищенный список баз данных: ${dbExists}"
     Read-Host "Нажмите Enter для продолжения..."
     exit 1
 }
 
 # Проверка существующих таблиц
 Write-Host "Проверка существующих таблиц в базе ${database}..."
-$checkTablesQuery = "USE ${database}; SELECT 'Communities' AS TableName, COUNT(*) AS Count FROM sys.tables WHERE name = 'Communities' UNION ALL SELECT 'Agents', COUNT(*) FROM sys.tables WHERE name = 'Agents' UNION ALL SELECT 'HiddenCommunities', COUNT(*) FROM sys.tables WHERE name = 'HiddenCommunities' UNION ALL SELECT 'News', COUNT(*) FROM sys.tables WHERE name = 'News' UNION ALL SELECT 'NewsPhoto', COUNT(*) FROM sys.tables WHERE name = 'NewsPhoto' UNION ALL SELECT 'Participating', COUNT(*) FROM sys.tables WHERE name = 'Participating';"
+$checkTablesQuery = "USE ${database}; SELECT 'Communities' AS TableName, COUNT(*) AS Count FROM Communities UNION ALL SELECT 'Agents', COUNT(*) FROM Agents UNION ALL SELECT 'HiddenCommunities', COUNT(*) FROM HiddenCommunities UNION ALL SELECT 'News', COUNT(*) FROM News UNION ALL SELECT 'NewsPhoto', COUNT(*) FROM NewsPhoto UNION ALL SELECT 'Participating', COUNT(*) FROM Participating;"
 if (-not (Invoke-SqlCmd $checkTablesQuery)) {
     Write-Error "ОШИБКА: Не удалось проверить существующие таблицы CommunityDB."
     Read-Host "Нажмите Enter для продолжения..."
@@ -129,7 +129,7 @@ if ($LASTEXITCODE -ne 0) {
 # Выполнение SQL-скрипта
 Write-Host "Выполнение SQL-скрипта..."
 $setupQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '${password}' -d ${database} -i /tmp/06_setup_community_data.sql"
-$result = docker exec $container bash -c $setupQuery 2>&1
+$result = docker exec -it $container bash -c $setupQuery 2>&1
 if ($LASTEXITCODE -ne 0) {
     Write-Error "ОШИБКА: Не удалось выполнить SQL-скрипт. Подробности: ${result}"
     Read-Host "Нажмите Enter для продолжения..."
