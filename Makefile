@@ -44,19 +44,19 @@ reset-db:
 ## Заполнение всех баз данных тестовыми данными
 fill-dbs:
 	@echo "Заполнение баз данных тестовыми данными..."
-	$(PWSH) ./fill_all_databases_in_docker.ps1
+	$(PWSH) ./sql/fill_all_databases_in_docker.ps1
 	@echo "Готово! Данные успешно заполнены."
 
 ## Очистка всех баз данных
 clean-dbs:
 	@echo "Очистка всех баз данных..."
-	$(PWSH) ./clean_all_databases_in_docker.ps1
+	$(PWSH) ./sql/clean_all_databases_in_docker.ps1
 	@echo "Готово! Базы данных очищены."
 
 ## Удаление всех баз данных
 drop-dbs:
 	@echo "Очистка всех баз данных..."
-	$(PWSH) ./drop_all_databases_in_docker.ps1
+	$(PWSH) ./sql/drop_all_databases_in_docker.ps1
 	@echo "Готово! Базы данных очищены."
 
 ## Проверка состояния сервисов
