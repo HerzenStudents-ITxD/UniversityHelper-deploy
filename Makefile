@@ -13,6 +13,10 @@ SERVICE_REDIS := redis
 
 ## Запуск всех сервисов (в фоне)
 up:
+	$(COMPOSE) -f $(COMPOSE_FILE) up -d
+
+## Запуск всех сервисов (в фоне)
+up-build:
 	$(COMPOSE) -f $(COMPOSE_FILE) up -d --build
 
 ## Остановка всех сервисов
