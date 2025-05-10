@@ -30,10 +30,10 @@ Write-Host "[DEBUG] Current console output encoding: $([Console]::OutputEncoding
 
 # List of PowerShell scripts to execute
 $scripts = @(
-    "1_fill_UserDB.ps1",
-    "2_fill_RightsDB.ps1",
-    "3_fill_CommunityDB.ps1",
-    "4_fill_FeedbackDB.ps1"
+    "1_fill_UserDB_in_docker.ps1",
+    "2_fill_RightsDB_in_docker.ps1",
+    "3_fill_CommunityDB_in_docker.ps1",
+    "4_fill_FeedbackDB_in_docker.ps1"
 )
 
 # Function to run a single script

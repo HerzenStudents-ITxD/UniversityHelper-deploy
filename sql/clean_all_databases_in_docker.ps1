@@ -99,11 +99,11 @@ if ($attempt -gt $maxAttempts) {
 
 # Execute cleanup scripts for each database
 $cleanScripts = @(
-    "UserDB\00_clean_UserDB.sql",
-    "CommunityDB\00_clean_CommunityDB.sql",
-    "RightsDB\00_clean_RightsDB.sql",
-    "FeedbackDB\00_clean_FeedbackDB.sql",
-    "MapDB\00_clean_MapDB.sql"
+    "UserDB\clean_tables.sql",
+    "CommunityDB\clean_tables.sql",
+    "RightsDB\clean_tables.sql",
+    "FeedbackDB\clean_tables.sql",
+    "MapDB\clean_tables.sql"
 )
 
 Write-Host "Cleaning all databases..."

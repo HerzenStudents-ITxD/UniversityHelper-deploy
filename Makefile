@@ -1,150 +1,57 @@
-.PHONY: all check-prerequisites check-docker check-github-desktop start-services check-services check-db check-rabbitmq check-auth check-user check-rights check-community check-feedback check-all
+# Универсальный Makefile для Docker Compose
+# Использование: make [команда]
 
-all: check-prerequisites start-services check-services
+# Переменные
+COMPOSE := docker-compose
+COMPOSE_FILE := docker-compose.yml
+SERVICE_SQL := sqlserver_db
+SERVICE_RABBIT := rabbitmq
+SERVICE_REDIS := redis
 
-check-prerequisites: check-docker check-github-desktop
+# Основные команды
+.PHONY: up down logs clean build rebuild reset-db help
 
-check-docker:
-	@echo "Checking if Docker is running..."
-	@if [ "$(shell uname)" = "Darwin" ]; then \
-		if ! docker info > /dev/null 2>&1; then \
-			echo "Docker is not running. Starting Docker Desktop..."; \
-			open -a Docker; \
-			echo "Waiting for Docker to start..."; \
-			while ! docker info > /dev/null 2>&1; do sleep 1; done; \
-			echo "Docker is now running!"; \
-		else \
-			echo "Docker is already running!"; \
-		fi \
-	elif [ "$(shell uname)" = "Linux" ]; then \
-		if ! systemctl is-active --quiet docker; then \
-			echo "Docker is not running. Starting Docker..."; \
-			sudo systemctl start docker; \
-			echo "Waiting for Docker to start..."; \
-			while ! systemctl is-active --quiet docker; do sleep 1; done; \
-			echo "Docker is now running!"; \
-		else \
-			echo "Docker is already running!"; \
-		fi \
-	elif [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		if ! docker info > /dev/null 2>&1; then \
-			echo "Docker is not running. Starting Docker Desktop..."; \
-			start "" "C:\Program Files\Docker\Docker\Docker Desktop.exe"; \
-			echo "Waiting for Docker to start..."; \
-			while ! docker info > /dev/null 2>&1; do sleep 1; done; \
-			echo "Docker is now running!"; \
-		else \
-			echo "Docker is already running!"; \
-		fi \
-	else \
-		echo "Unsupported operating system"; \
-		exit 1; \
-	fi
+## Запуск всех сервисов (в фоне)
+up:
+	$(COMPOSE) -f $(COMPOSE_FILE) up -d --build
 
-check-github-desktop:
-	@echo "Checking if GitHub Desktop is running..."
-	@if [ "$(shell uname)" = "Darwin" ]; then \
-		if ! pgrep -q "GitHub Desktop"; then \
-			echo "GitHub Desktop is not running. Starting GitHub Desktop..."; \
-			open -a "GitHub Desktop"; \
-			echo "Waiting for GitHub Desktop to start..."; \
-			while ! pgrep -q "GitHub Desktop"; do sleep 1; done; \
-			echo "GitHub Desktop is now running!"; \
-		else \
-			echo "GitHub Desktop is already running!"; \
-		fi \
-	elif [ "$(shell uname)" = "Linux" ]; then \
-		if ! pgrep -q "github-desktop"; then \
-			echo "GitHub Desktop is not running. Please start it manually."; \
-			exit 1; \
-		else \
-			echo "GitHub Desktop is already running!"; \
-		fi \
-	elif [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		if ! tasklist | findstr /i "GitHubDesktop.exe" > nul; then \
-			echo "GitHub Desktop is not running. Starting GitHub Desktop..."; \
-			start "" "%LOCALAPPDATA%\GitHubDesktop\GitHubDesktop.exe"; \
-			echo "Waiting for GitHub Desktop to start..."; \
-			while ! tasklist | findstr /i "GitHubDesktop.exe" > nul; do sleep 1; done; \
-			echo "GitHub Desktop is now running!"; \
-		else \
-			echo "GitHub Desktop is already running!"; \
-		fi \
-	else \
-		echo "Unsupported operating system"; \
-		exit 1; \
-	fi
+## Остановка всех сервисов
+down:
+	$(COMPOSE) -f $(COMPOSE_FILE) down
 
-start-services:
-	@echo "Starting services..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		powershell -ExecutionPolicy Bypass -File ./setup.ps1; \
-	else \
-		chmod +x ./setup.sh && ./setup.sh; \
-	fi
+## Просмотр логов (всех сервисов или конкретного, например: make logs service=authservice)
+logs:
+	$(COMPOSE) -f $(COMPOSE_FILE) logs -f $(filter-out $@,$(MAKECMDGOALS))
 
-check-services: check-db check-rabbitmq check-auth check-user check-rights check-community check-feedback
+## Очистка (остановка + удаление volumes)
+clean:
+	$(COMPOSE) -f $(COMPOSE_FILE) down -v
 
-check-db:
-	@echo "Checking databases..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		./sql/1_fill_admin_UserDB.bat; \
-		./sql/2_fill_admin_RightsDB.bat; \
-		./sql/3_fill_admin_CommunityDB.bat; \
-		./sql/4_fill_FeedbackDB.bat; \
-	else \
-		chmod +x ./sql/1_fill_admin_UserDB.sh && ./sql/1_fill_admin_UserDB.sh; \
-		chmod +x ./sql/2_fill_admin_RightsDB.sh && ./sql/2_fill_admin_RightsDB.sh; \
-		chmod +x ./sql/3_fill_admin_CommunityDB.sh && ./sql/3_fill_admin_CommunityDB.sh; \
-		chmod +x ./sql/4_fill_FeedbackDB.sh && ./sql/4_fill_FeedbackDB.sh; \
-	fi
+## Пересборка всех сервисов
+rebuild:
+	$(COMPOSE) -f $(COMPOSE_FILE) up -d --build --force-recreate --no-deps
 
-check-rabbitmq:
-	@echo "Checking RabbitMQ..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		powershell -ExecutionPolicy Bypass -File ./check_rabbitmq.ps1; \
-	else \
-		chmod +x ./check_rabbitmq.sh && ./check_rabbitmq.sh; \
-	fi
+## Сброс БД (удаление volume SQL Server)
+reset-db:
+	docker volume rm $$(docker volume ls -q | grep $(SERVICE_SQL)) || true
+	@echo "SQL Server volume удален. Перезапустите сервисы через 'make up'."
 
-check-auth:
-	@echo "Checking AuthService..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		powershell -ExecutionPolicy Bypass -File ./check_auth.ps1; \
-	else \
-		chmod +x ./check_auth.sh && ./check_auth.sh; \
-	fi
+## Проверка состояния сервисов
+status:
+	$(COMPOSE) -f $(COMPOSE_FILE) ps
 
-check-user:
-	@echo "Checking UserService..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		powershell -ExecutionPolicy Bypass -File ./check_user.ps1; \
-	else \
-		chmod +x ./check_user.sh && ./check_user.sh; \
-	fi
+## Справка
+help:
+	@echo "Доступные команды:"
+	@echo "  up           - Запуск всех сервисов"
+	@echo "  down         - Остановка всех сервисов"
+	@echo "  logs         - Просмотр логов (можно указать сервис: make logs service=nginx-proxy)"
+	@echo "  clean        - Полная очистка (сервисы + volumes)"
+	@echo "  rebuild      - Пересборка всех сервисов"
+	@echo "  reset-db     - Удаление БД SQL Server"
+	@echo "  status       - Показать состояние контейнеров"
+	@echo "  help         - Вывести эту справку"
 
-check-rights:
-	@echo "Checking RightsService..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		powershell -ExecutionPolicy Bypass -File ./check_rights.ps1; \
-	else \
-		chmod +x ./check_rights.sh && ./check_rights.sh; \
-	fi
-
-check-community:
-	@echo "Checking CommunityService..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		powershell -ExecutionPolicy Bypass -File ./check_community.ps1; \
-	else \
-		chmod +x ./check_community.sh && ./check_community.sh; \
-	fi
-
-check-feedback:
-	@echo "Checking FeedbackService..."
-	@if [ "$(shell uname)" = "MINGW"* ] || [ "$(shell uname)" = "MSYS"* ]; then \
-		powershell -ExecutionPolicy Bypass -File ./check_feedback.ps1; \
-	else \
-		chmod +x ./check_feedback.sh && ./check_feedback.sh; \
-	fi
-
-check-all: check-services
+# Фикс для передачи аргументов в команды (например, для logs)
+%:
+	@:

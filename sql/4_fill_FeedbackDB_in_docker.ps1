@@ -1,9 +1,9 @@
 #!/usr/bin/env pwsh
 
-# PowerShell Core script for configuring the CommunityDB database
-Write-Host "Starting the CommunityDB database population script..."
+# PowerShell Core script for configuring the FeedbackDB database
+Write-Host "Starting the FeedbackDB database population script..."
 
-# Loading environment variables from the .env file in the script directory
+# Load environment variables from the .env file in the script directory
 $scriptDir = Split-Path -Parent $MyInvocation.MyCommand.Path
 $envFile = Join-Path -Path $scriptDir -ChildPath ".env"
 
@@ -26,11 +26,10 @@ Get-Content $envFile | ForEach-Object {
 # Configuration from .env
 $container = [System.Environment]::GetEnvironmentVariable("DB_CONTAINER")
 $password = [System.Environment]::GetEnvironmentVariable("SA_PASSWORD")
-$database = [System.Environment]::GetEnvironmentVariable("COMMUNITYDB_DB_NAME")
-$userId = [System.Environment]::GetEnvironmentVariable("COMMUNITYDB_ADMIN_USER_ID")
+$database = [System.Environment]::GetEnvironmentVariable("FEEDBACKDB_DB_NAME")
 
-# Validating environment variables
-$requiredVars = @("DB_CONTAINER", "SA_PASSWORD", "COMMUNITYDB_DB_NAME", "COMMUNITYDB_ADMIN_USER_ID")
+# Validate environment variables
+$requiredVars = @("DB_CONTAINER", "SA_PASSWORD", "FEEDBACKDB_DB_NAME")
 $missingVars = @()
 foreach ($var in $requiredVars) {
     if (-not [System.Environment]::GetEnvironmentVariable($var)) {
@@ -43,19 +42,19 @@ if ($missingVars.Count -gt 0) {
     exit 1
 }
 
-# Validating database name
-if ($database -ne "CommunityDB") {
-    Write-Error "ERROR: Database name ($database) does not match expected 'CommunityDB'."
+# Validate database name
+if ($database -ne "FeedbackDB") {
+    Write-Error "ERROR: Database name ($database) does not match expected 'FeedbackDB'."
     exit 1
 }
 
-# Checking Docker availability
+# Check if Docker is installed
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
     Write-Error "ERROR: Docker is not installed or missing from PATH."
     exit 1
 }
 
-# Checking if container is running
+# Check if the container is running
 Write-Host "Checking if container $container is running..."
 try {
     $containerStatus = docker inspect $container 2>&1
@@ -103,70 +102,9 @@ function Invoke-SqlCmd {
     }
 }
 
-# Checking existing tables
-Write-Host "Checking existing tables in database $database..."
-$checkTablesQuery = @"
-USE $database;
-SELECT 
-    'Communities' AS TableName, 
-    COUNT(*) AS Count 
-FROM sys.tables 
-WHERE name = 'Communities' 
-UNION ALL 
-SELECT 
-    'Agents', 
-    COUNT(*) 
-FROM sys.tables 
-WHERE name = 'Agents' 
-UNION ALL 
-SELECT 
-    'HiddenCommunities', 
-    COUNT(*) 
-FROM sys.tables 
-WHERE name = 'HiddenCommunities' 
-UNION ALL 
-SELECT 
-    'News', 
-    COUNT(*) 
-FROM sys.tables 
-WHERE name = 'News' 
-UNION ALL 
-SELECT 
-    'NewsPhoto', 
-    COUNT(*) 
-FROM sys.tables 
-WHERE name = 'NewsPhoto' 
-UNION ALL 
-SELECT 
-    'Participating', 
-    COUNT(*) 
-FROM sys.tables 
-WHERE name = 'Participating';
-"@
-
-$tablesCheck = Invoke-SqlCmd $checkTablesQuery
-if (-not $tablesCheck) {
-    exit 1
-}
-
-# Cleaning up existing data
-Write-Host "Cleaning up existing data..."
-$cleanupQuery = @"
-USE $database;
-DELETE FROM Participating WHERE UserId = '$userId';
-DELETE FROM News WHERE AuthorId = '$userId';
-DELETE FROM Agents WHERE AgentId = '$userId';
-DELETE FROM HiddenCommunities WHERE UserId = '$userId';
-DELETE FROM Communities WHERE CreatedBy = '$userId';
-"@
-
-if (-not (Invoke-SqlCmd $cleanupQuery)) {
-    exit 1
-}
-
-# Copying SQL script to container
+# Copy SQL script to container
 Write-Host "Copying SQL script to container..."
-$sqlScriptPath = Join-Path -Path $scriptDir -ChildPath "CommunityDB/06_setup_community_data.sql"
+$sqlScriptPath = Join-Path -Path $scriptDir -ChildPath "FeedbackDB/07_setup_feedback_data.sql"
 
 if (-not (Test-Path $sqlScriptPath)) {
     Write-Error "ERROR: SQL script $sqlScriptPath not found."
@@ -174,7 +112,7 @@ if (-not (Test-Path $sqlScriptPath)) {
 }
 
 try {
-    docker cp $sqlScriptPath "${container}:/tmp/06_setup_community_data.sql"
+    docker cp $sqlScriptPath "${container}:/tmp/07_setup_feedback_data.sql"
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to copy SQL script to container"
     }
@@ -183,9 +121,9 @@ try {
     exit 1
 }
 
-# Executing SQL script
-Write-Host "Executing SQL script..."
-$setupQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$($password -replace "'", "''")' -d $database -i /tmp/06_setup_community_data.sql"
+# Execute SQL script
+Write-Host "Configuring FeedbackDB tables and data..."
+$setupQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$($password -replace "'", "''")' -d $database -i /tmp/07_setup_feedback_data.sql"
 
 try {
     $result = docker exec $container bash -c $setupQuery 2>&1
@@ -197,9 +135,9 @@ try {
     exit 1
 }
 
-# Verifying CommunityDB tables
-Write-Host "Verifying CommunityDB tables..."
-$verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "sql/CommunityDB/check_tables.ps1"
+# Verify FeedbackDB tables
+Write-Host "Verifying FeedbackDB tables..."
+$verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "FeedbackDB/check_tables.ps1"
 
 if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
@@ -212,5 +150,5 @@ if (Test-Path $verifyScriptPath) {
     Write-Warning "WARNING: Verification script $verifyScriptPath not found."
 }
 
-Write-Host "CommunityDB setup completed successfully ✅"
+Write-Host "FeedbackDB setup completed successfully ✅"
 exit 0
