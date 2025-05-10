@@ -33,7 +33,8 @@ $scripts = @(
     "1_fill_UserDB_in_docker.ps1",
     "2_fill_RightsDB_in_docker.ps1",
     "3_fill_CommunityDB_in_docker.ps1",
-    "4_fill_FeedbackDB_in_docker.ps1"
+    "4_fill_FeedbackDB_in_docker.ps1",
+    "5_fill_MapDB_in_docker.ps1",
 )
 
 # Function to run a single script

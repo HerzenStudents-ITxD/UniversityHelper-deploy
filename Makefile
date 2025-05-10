@@ -53,6 +53,12 @@ clean-dbs:
 	$(PWSH) ./clean_all_databases_in_docker.ps1
 	@echo "Готово! Базы данных очищены."
 
+## Удаление всех баз данных
+drop-dbs:
+	@echo "Очистка всех баз данных..."
+	$(PWSH) ./drop_all_databases_in_docker.ps1
+	@echo "Готово! Базы данных очищены."
+
 ## Проверка состояния сервисов
 status:
 	$(COMPOSE) -f $(COMPOSE_FILE) ps
