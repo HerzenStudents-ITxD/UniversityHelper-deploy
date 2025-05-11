@@ -46,29 +46,12 @@ http://127.0.0.1:83/swagger/index.html
 Если хотите чтобы какие-то ручки не требовали авторизаци -- прописываете их в конце файла appsettings.json
 
 ❗️ИНСТРУКЦИЯ как завести админа для логина 
-На Linux: bash install_admin_linux.sh
-На MacOs: bash install_admin_macos.sh
-На Windows: install_admin_windows.bat
+На Linux/MacOS: pwsh ./sql/fill_all_databases.ps1
+На Windows: ./sql/fill_all_databases.ps1
 
-Если из консоли в VS Code то команда будет выглядеть так: .\install_admin_windows.bat
-
-## Вариант 2 (автоматический)
-Чтобы использовать эти скрипты:
-В Windows:
-Просто дважды щелкните на start.bat 
-(не работает судя по всему)
-
-В macOS/Linux:
-- Откройте терминал
-- Перейдите в директорию с проектом
+В MacOS/Linux:
 - Сделайте скрипт исполняемым:
-chmod +x setup.sh
-- Запустите скрипт:
-./setup.sh
+chmod +x ./sql/fill_all_databases.ps1
 
-Скрипты автоматически:
-- Определят вашу операционную систему
-- Проверят наличие make
-- Установят make, если он отсутствует
-- Запустят make после установки
-- Все скрипты требуют прав администратора для установки пакетов, поэтому они автоматически запросят повышение прав при необходимости.
+## Вариант 2 (через Makefile)
+На Windows: скачать make (например choco install make) и пользоваться командами make up, make down...
