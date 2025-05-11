@@ -45,6 +45,15 @@ if ($LASTEXITCODE -ne 0) {
     exit 1
 }
 
+# Check database connection
+Write-Host "Testing database connection with SA credentials..."
+$testQuery = "SELECT name FROM sys.databases"
+$result = docker exec $container /opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P $password -Q "$testQuery"
+if ($LASTEXITCODE -ne 0) {
+    Write-Error "ERROR: Failed to connect to SQL Server with provided SA credentials"
+    exit 1
+}
+
 # Function to execute drop scripts
 function Execute-DropScript {
     param (
