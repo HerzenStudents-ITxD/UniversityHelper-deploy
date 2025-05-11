@@ -104,7 +104,7 @@ function Invoke-SqlCmd {
 
 # Copy SQL script to container
 Write-Host "Copying SQL script to container..."
-$sqlScriptPath = Join-Path -Path $scriptDir -ChildPath "MapDB/08_setup_map_data.sql"
+$sqlScriptPath = Join-Path -Path $scriptDir -ChildPath "MapDB/08_setup_MapDB.sql"
 
 if (-not (Test-Path $sqlScriptPath)) {
     Write-Error "ERROR: SQL script $sqlScriptPath not found."
@@ -112,7 +112,7 @@ if (-not (Test-Path $sqlScriptPath)) {
 }
 
 try {
-    docker cp $sqlScriptPath "${container}:/tmp/08_setup_map_data.sql"
+    docker cp $sqlScriptPath "${container}:/tmp/08_setup_MapDB.sql"
     if ($LASTEXITCODE -ne 0) {
         throw "Failed to copy SQL script to container"
     }
@@ -123,7 +123,7 @@ try {
 
 # Execute SQL script
 Write-Host "Configuring MapDB tables and data..."
-$setupQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$($password -replace "'", "''")' -d $database -i /tmp/08_setup_map_data.sql"
+$setupQuery = "/opt/mssql-tools/bin/sqlcmd -S localhost -U SA -P '$($password -replace "'", "''")' -d $database -i /tmp/08_setup_MapDB.sql"
 
 try {
     $result = docker exec $container bash -c $setupQuery 2>&1
