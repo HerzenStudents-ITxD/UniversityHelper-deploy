@@ -52,3 +52,6 @@ http://127.0.0.1:83/swagger/index.html
 В MacOS/Linux:
 - Сделайте скрипт исполняемым:
 chmod +x ./sql/fill_all_databases.ps1
+
+## Вариант 2 (через Makefile)
+На Windows: скачать make (например choco install make) и пользоваться командами make up, make down...
