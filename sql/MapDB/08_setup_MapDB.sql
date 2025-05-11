@@ -150,7 +150,7 @@ VALUES
 ),
 -- Computer lab type
 (
-    @ComputerLabTypeId,
+    @ComputerLabTypeId, 
     '{"ru": "Компьютерный класс", "en": "Computer Lab", "cn": "计算机实验室"}',
     'computer-icon',
     @AdminUserId,
@@ -341,43 +341,43 @@ VALUES
 (NEWID(), @CafeteriaId, '{"ru": "Обед", "en": "Lunch", "cn": "午餐"}');
 
 -- Create Point Labels (tags for points)
-INSERT INTO PointLabels (Id, PointId, LabelId)
+INSERT INTO LabelPoints (Id, LabelId, PointId, CreatedBy, CreatedAtUtc, IsActive, Name)
 VALUES
 -- Main entrance labels
-(NEWID(), @MainEntranceId, @PublicAreaLabelId),
-(NEWID(), @MainEntranceId, @AccessibleLabelId),
+(NEWID(), @PublicAreaLabelId, @MainEntranceId, @AdminUserId, @Now, 1, 'Public Area'),
+(NEWID(), @AccessibleLabelId, @MainEntranceId, @AdminUserId, @Now, 1, 'Accessible'),
 -- Reception labels
-(NEWID(), @ReceptionId, @PublicAreaLabelId),
-(NEWID(), @ReceptionId, @AccessibleLabelId),
+(NEWID(), @PublicAreaLabelId, @ReceptionId, @AdminUserId, @Now, 1, 'Public Area'),
+(NEWID(), @AccessibleLabelId, @ReceptionId, @AdminUserId, @Now, 1, 'Accessible'),
 -- Library labels
-(NEWID(), @LibraryId, @StudyAreaLabelId),
-(NEWID(), @LibraryId, @PublicAreaLabelId),
+(NEWID(), @StudyAreaLabelId, @LibraryId, @AdminUserId, @Now, 1, 'Study Area'),
+(NEWID(), @PublicAreaLabelId, @LibraryId, @AdminUserId, @Now, 1, 'Public Area'),
 -- Cafeteria labels
-(NEWID(), @CafeteriaId, @PublicAreaLabelId),
-(NEWID(), @CafeteriaId, @FoodLabelId),
+(NEWID(), @PublicAreaLabelId, @CafeteriaId, @AdminUserId, @Now, 1, 'Public Area'),
+(NEWID(), @FoodLabelId, @CafeteriaId, @AdminUserId, @Now, 1, 'Food'),
 -- Auditorium labels
-(NEWID(), @Auditorium1Id, @StudyAreaLabelId),
-(NEWID(), @Auditorium2Id, @StudyAreaLabelId),
+(NEWID(), @StudyAreaLabelId, @Auditorium1Id, @AdminUserId, @Now, 1, 'Study Area'),
+(NEWID(), @StudyAreaLabelId, @Auditorium2Id, @AdminUserId, @Now, 1, 'Study Area'),
 -- Dean office labels
-(NEWID(), @DeanOfficeId, @AdministrativeLabelId),
+(NEWID(), @AdministrativeLabelId, @DeanOfficeId, @AdminUserId, @Now, 1, 'Administrative'),
 -- Computer lab labels
-(NEWID(), @ComputerLabId, @StudyAreaLabelId),
-(NEWID(), @ComputerLabId, @TechLabelId),
+(NEWID(), @StudyAreaLabelId, @ComputerLabId, @AdminUserId, @Now, 1, 'Study Area'),
+(NEWID(), @TechLabelId, @ComputerLabId, @AdminUserId, @Now, 1, 'Technology'),
 -- Parking labels
-(NEWID(), @ParkingLotId, @PublicAreaLabelId),
+(NEWID(), @PublicAreaLabelId, @ParkingLotId, @AdminUserId, @Now, 1, 'Public Area'),
 -- Sports hall labels
-(NEWID(), @SportsHallId, @PublicAreaLabelId);
+(NEWID(), @PublicAreaLabelId, @SportsHallId, @AdminUserId, @Now, 1, 'Public Area');
 
 -- Create Point Photos
-INSERT INTO PointPhotos (Id, PointId, Photo, OrdinalNumber, CreatedBy, CreatedAtUtc, IsActive)
+INSERT INTO Photos (Id, PointId, OrdinalNumber, CreatedBy, CreatedAtUtc, IsActive, Content)
 VALUES
 -- Main entrance photos
-(NEWID(), @MainEntranceId, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...', 1, @AdminUserId, @Now, 1),
-(NEWID(), @MainEntranceId, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...', 2, @AdminUserId, @Now, 1),
+(NEWID(), @MainEntranceId, 1, @AdminUserId, @Now, 1, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...'),
+(NEWID(), @MainEntranceId, 2, @AdminUserId, @Now, 1, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...'),
 -- Library photos
-(NEWID(), @LibraryId, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...', 1, @ModeratorUserId, @Now, 1),
+(NEWID(), @LibraryId, 1, @ModeratorUserId, @Now, 1, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...'),
 -- Cafeteria photos
-(NEWID(), @CafeteriaId, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...', 1, @AdminUserId, @Now, 1);
+(NEWID(), @CafeteriaId, 1, @AdminUserId, @Now, 1, 'data:image/jpeg;base64,/9j/4AAQSkZJRgABAQEAYABgAAD...');
 
 -- Create Point Types (categorization)
 INSERT INTO PointTypePoints (Id, PointTypeId, PointId)
@@ -455,11 +455,11 @@ SELECT Id, PointId, Association FROM PointAssociations;
 
 -- Check point labels
 PRINT 'Point Labels:';
-SELECT Id, PointId, LabelId FROM PointLabels;
+SELECT Id, LabelId, PointId, CreatedBy, CreatedAtUtc, IsActive, Name FROM LabelPoints;
 
 -- Check point photos
 PRINT 'Point Photos:';
-SELECT Id, PointId, OrdinalNumber, CreatedBy, CreatedAtUtc, IsActive FROM PointPhotos;
+SELECT Id, PointId, OrdinalNumber, CreatedBy, CreatedAtUtc, IsActive, Content FROM Photos;
 
 -- Check point types
 PRINT 'Point Type Points:';

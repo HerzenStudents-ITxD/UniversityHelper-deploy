@@ -139,7 +139,7 @@ try {
 Write-Host "Verifying MapDB tables..."
 $verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "MapDB/check_tables.ps1"
 
-if (Test-Path $verifyScriptPath) {
+if (Test-Path $verifyScriptPath)) {
     Write-Host "Executing external verification script..."
     & $verifyScriptPath
     if ($LASTEXITCODE -ne 0) {
@@ -150,9 +150,9 @@ if (Test-Path $verifyScriptPath) {
     Write-Warning "WARNING: Verification script $verifyScriptPath not found."
 }
 
-# Basic verification of tables
+# Basic verification of tables - updated to match actual table names
 Write-Host "Performing basic table verification..."
-$tablesToCheck = @("Points", "PointTypes", "PointPhotos", "PointLabels", "Relations")
+$tablesToCheck = @("Points", "PointTypes", "Photos", "LabelPoints", "PointTypePoints")
 
 foreach ($table in $tablesToCheck) {
     $result = Invoke-SqlCmd -Query "SELECT COUNT(*) FROM $table"
