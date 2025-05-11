@@ -1,8 +1,24 @@
-ИНСТРУКЦИЯ по сборке проекта
+# Основные команды
+- Собрать контейнеры: 
+docker compose up -d
+- Пересобрать образы и контейнеры: 
+docker compose up -d --build
+- Остановить контейнеры: 
+docker compose down
+- Остановить контейнеры и удалить волюмы: 
+docker compose down -v
+- Заполнить все бд в докере тестовыми данными:
+./sql/fill_all_databases_in_docker.ps1
+- Очистить все бд в докере:
+./sql/clean_all_databases_in_docker.ps1
+- Дропнуть все бд в докере:
+./sql/drop_all_databases_in_docker.ps1
 
 # Установите все зависимости
 
 Docker Desktop:
+- Windows https://docs.docker.com/desktop/setup/install/windows-install/
+- Mac https://docs.docker.com/desktop/setup/install/mac-install/
 
 PowerShell Core (v7+): https://learn.microsoft.com/ru-ru/powershell/
 
@@ -55,3 +71,4 @@ chmod +x ./sql/fill_all_databases.ps1
 
 ## Вариант 2 (через Makefile)
 На Windows: скачать make (например choco install make) и пользоваться командами make up, make down...
+Либо так: https://gnuwin32.sourceforge.net/packages/make.htm
