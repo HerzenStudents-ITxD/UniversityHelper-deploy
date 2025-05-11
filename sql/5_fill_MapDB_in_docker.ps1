@@ -139,7 +139,7 @@ try {
 Write-Host "Verifying MapDB tables..."
 $verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "MapDB/check_tables.ps1"
 
-if (Test-Path $verifyScriptPath)) {
+if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
     & $verifyScriptPath
     if ($LASTEXITCODE -ne 0) {

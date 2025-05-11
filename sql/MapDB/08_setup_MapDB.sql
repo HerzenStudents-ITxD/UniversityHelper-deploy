@@ -221,7 +221,7 @@ VALUES
 (NEWID(), @ComputerLabTypeId, 30, 40, 3, 50, 60, 3, @AdminUserId, @Now, 1);
 
 -- Create Points (locations on the map)
-INSERT INTO Points (Id, Name, X, Y, Z, Icon, CreatedBy, CreatedAtUtc, IsActive)
+INSERT INTO Points (Id, Name, X, Y, Z, Icon, CreatedBy, CreatedAtUtc, IsActive, Fact, Description)
 VALUES
 -- Main entrance (ground floor)
 (
@@ -231,7 +231,9 @@ VALUES
     'main-entrance-icon',
     @AdminUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Основной вход в университет", "en": "Main university entrance", "cn": "大学正门"}',
+    '{"ru": "Главный вход с охраной и турникетами", "en": "Main entrance with security and turnstiles", "cn": "设有保安和闸机的主入口"}'
 ),
 -- Reception (ground floor)
 (
@@ -241,7 +243,9 @@ VALUES
     'reception-icon',
     @AdminUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Здесь можно получить информацию", "en": "Information available here", "cn": "可在此获取信息"}',
+    '{"ru": "Центральный ресепшен с картами и справочными материалами", "en": "Central reception with maps and information materials", "cn": "中央接待处提供地图和信息资料"}'
 ),
 -- Library (1st floor)
 (
@@ -251,7 +255,9 @@ VALUES
     'library-icon',
     @AdminUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Более 100 000 книг и журналов", "en": "Over 100,000 books and journals", "cn": "超过10万册书籍和期刊"}',
+    '{"ru": "Трехэтажная библиотека с читальными залами и компьютерной зоной", "en": "Three-story library with reading rooms and computer area", "cn": "三层图书馆，设有阅览室和电脑区"}'
 ),
 -- Cafeteria (ground floor)
 (
@@ -261,7 +267,9 @@ VALUES
     'cafeteria-icon',
     @AdminUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Открыт с 8:00 до 20:00", "en": "Open from 8:00 to 20:00", "cn": "开放时间8:00至20:00"}',
+    '{"ru": "Столовая с горячими блюдами и салат-баром", "en": "Cafeteria with hot meals and salad bar", "cn": "提供热食和沙拉吧的自助餐厅"}'
 ),
 -- Auditorium 1 (1st floor)
 (
@@ -271,7 +279,9 @@ VALUES
     'auditorium-icon',
     @ModeratorUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Вместимость 120 человек", "en": "Capacity 120 people", "cn": "可容纳120人"}',
+    '{"ru": "Лекционная аудитория с проектором и звуковой системой", "en": "Lecture hall with projector and sound system", "cn": "配有投影仪和音响系统的演讲厅"}'
 ),
 -- Auditorium 2 (2nd floor)
 (
@@ -281,7 +291,9 @@ VALUES
     'auditorium-icon',
     @ModeratorUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Вместимость 80 человек", "en": "Capacity 80 people", "cn": "可容纳80人"}',
+    '{"ru": "Семинарная аудитория с круглым столом", "en": "Seminar room with round table", "cn": "带圆桌的研讨室"}'
 ),
 -- Dean Office (2nd floor)
 (
@@ -291,7 +303,9 @@ VALUES
     'office-icon',
     @AdminUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Приемные часы: 10:00-12:00, 14:00-16:00", "en": "Office hours: 10:00-12:00, 14:00-16:00", "cn": "办公时间10:00-12:00，14:00-16:00"}',
+    '{"ru": "Кабинет декана факультета с приемной", "en": "Deans office with reception area", "cn": "院长办公室及接待区"}'
 ),
 -- Computer Lab (1st floor)
 (
@@ -301,7 +315,9 @@ VALUES
     'computer-icon',
     @ModeratorUserId,
     @Now,
-    1
+    1,
+    '{"ru": "30 рабочих станций", "en": "30 workstations", "cn": "30个工作台"}',
+    '{"ru": "Компьютерный класс с ПО для программирования", "en": "Computer lab with programming software", "cn": "配备编程软件的计算机实验室"}'
 ),
 -- Parking Lot (outside, ground level)
 (
@@ -311,7 +327,9 @@ VALUES
     'parking-icon',
     @AdminUserId,
     @Now,
-    1
+    1,
+    '{"ru": "50 парковочных мест", "en": "50 parking spaces", "cn": "50个停车位"}',
+    '{"ru": "Охраняемая парковка для сотрудников и гостей", "en": "Guarded parking for staff and visitors", "cn": "为员工和访客提供的安保停车场"}'
 ),
 -- Sports Hall (ground floor)
 (
@@ -321,7 +339,9 @@ VALUES
     'sports-icon',
     @AdminUserId,
     @Now,
-    1
+    1,
+    '{"ru": "Открыт для студентов с 7:00 до 22:00", "en": "Open for students from 7:00 to 22:00", "cn": "对学生开放时间7:00至22:00"}',
+    '{"ru": "Спортивный зал с тренажерами и раздевалками", "en": "Sports hall with exercise equipment and changing rooms", "cn": "配有健身器材和更衣室的体育馆"}'
 );
 
 -- Create Point Associations (searchable terms for each point)
@@ -412,30 +432,49 @@ VALUES
 (NEWID(), @Floor1TypeId, @SportsHallId);
 
 -- Create Relations (paths between points)
-INSERT INTO Relations (Id, FirstPointId, SecondPointId, CreatedBy, CreatedAtUtc)
+PRINT 'Creating relations between points...';
+INSERT INTO Relations (Id, FirstPointId, SecondPointId, CreatedBy, CreatedAtUtc, DbPointId)
 VALUES
 -- Path from main entrance to reception
-(NEWID(), @MainEntranceId, @ReceptionId, @AdminUserId, @Now),
+(NEWID(), @MainEntranceId, @ReceptionId, @AdminUserId, @Now, NULL),
 -- Path from reception to library (stairs)
-(NEWID(), @ReceptionId, @LibraryId, @AdminUserId, @Now),
+(NEWID(), @ReceptionId, @LibraryId, @AdminUserId, @Now, NULL),
 -- Path from reception to cafeteria
-(NEWID(), @ReceptionId, @CafeteriaId, @AdminUserId, @Now),
+(NEWID(), @ReceptionId, @CafeteriaId, @AdminUserId, @Now, NULL),
 -- Path from library to auditorium 1 (same floor)
-(NEWID(), @LibraryId, @Auditorium1Id, @ModeratorUserId, @Now),
+(NEWID(), @LibraryId, @Auditorium1Id, @ModeratorUserId, @Now, NULL),
 -- Path from auditorium 1 to auditorium 2 (stairs)
-(NEWID(), @Auditorium1Id, @Auditorium2Id, @ModeratorUserId, @Now),
+(NEWID(), @Auditorium1Id, @Auditorium2Id, @ModeratorUserId, @Now, NULL),
 -- Path from auditorium 2 to dean office
-(NEWID(), @Auditorium2Id, @DeanOfficeId, @AdminUserId, @Now),
+(NEWID(), @Auditorium2Id, @DeanOfficeId, @AdminUserId, @Now, NULL),
 -- Path from main entrance to parking lot
-(NEWID(), @MainEntranceId, @ParkingLotId, @AdminUserId, @Now),
+(NEWID(), @MainEntranceId, @ParkingLotId, @AdminUserId, @Now, NULL),
 -- Path from main entrance to sports hall
-(NEWID(), @MainEntranceId, @SportsHallId, @AdminUserId, @Now),
+(NEWID(), @MainEntranceId, @SportsHallId, @AdminUserId, @Now, NULL),
 -- Path from cafeteria to computer lab
-(NEWID(), @CafeteriaId, @ComputerLabId, @ModeratorUserId, @Now);
+(NEWID(), @CafeteriaId, @ComputerLabId, @ModeratorUserId, @Now, NULL);
 
 -- Verify setup
 PRINT 'MapDB data setup completed';
 PRINT 'Checking all data:';
+
+# Basic verification of tables - updated to match actual table names
+Write-Host "Performing basic table verification..."
+$tablesToCheck = @("Points", "PointTypes", "Photos", "LabelPoints", "PointTypePoints", "Relations")
+
+foreach ($table in $tablesToCheck) {
+    try {
+        $result = Invoke-SqlCmd -Query "SELECT TOP 1 Id FROM $table"
+        if ($result -ne $false) {
+            $count = Invoke-SqlCmd -Query "SELECT COUNT(*) AS Count FROM $table"
+            Write-Host "[VERIFICATION] Table $table exists and contains $($count.Trim()) records"
+        } else {
+            Write-Warning "[VERIFICATION WARNING] Could not verify table $table"
+        }
+    } catch {
+        Write-Warning "[VERIFICATION ERROR] Error verifying table $table`: $_"
+    }
+}
 
 -- Check all labels
 PRINT 'Labels:';
@@ -447,7 +486,7 @@ SELECT Id, Name, Icon, CreatedBy, CreatedAtUtc, IsActive FROM PointTypes;
 
 -- Check all points
 PRINT 'Points:';
-SELECT Id, Name, X, Y, Z, Icon, CreatedBy, CreatedAtUtc, IsActive FROM Points;
+SELECT Id, Name, X, Y, Z, Icon, CreatedBy, CreatedAtUtc, IsActive, Fact, Description FROM Points;
 
 -- Check point associations
 PRINT 'Point Associations:';
@@ -467,7 +506,7 @@ SELECT Id, PointTypeId, PointId FROM PointTypePoints;
 
 -- Check relations
 PRINT 'Relations:';
-SELECT Id, FirstPointId, SecondPointId, CreatedBy, CreatedAtUtc FROM Relations;
+SELECT Id, FirstPointId, SecondPointId, CreatedBy, CreatedAtUtc, DbPointId FROM Relations;
 
 PRINT 'Setup verification completed';
 GO
