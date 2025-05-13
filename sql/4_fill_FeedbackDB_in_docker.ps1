@@ -137,7 +137,7 @@ try {
 
 # Verify FeedbackDB tables
 Write-Host "Verifying FeedbackDB tables..."
-$verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "FeedbackDB/check__in_docker.ps1"
+$verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "FeedbackDB/check_tables_in_docker.ps1"
 
 if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."

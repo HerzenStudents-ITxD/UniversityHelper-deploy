@@ -137,7 +137,7 @@ try {
 
 # Verify MapDB tables
 Write-Host "Verifying MapDB tables..."
-$verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "MapDB/check_tables.ps1"
+$verifyScriptPath = Join-Path -Path $scriptDir -ChildPath "MapDB/check_tables_in_docker.ps1"
 
 if (Test-Path $verifyScriptPath) {
     Write-Host "Executing external verification script..."
