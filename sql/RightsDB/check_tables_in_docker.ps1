@@ -54,10 +54,10 @@ Write-Output "SQL Server is available and responding"
 
 # Проверка существования SQL скрипта
 Write-Output "`n[2/3] Locating SQL script '$SQL_SCRIPT_NAME'..."
-$sqlScriptPath = Test-SqlScriptExists -PSScriptRoot $PSScriptRoot -ScriptName $SQL_SCRIPT_NAME
-if (-not $sqlScriptPath) {
-    Write-Output "ERROR: SQL script '$SQL_SCRIPT_NAME' not found in: $PSScriptRoot"
-    Write-Output "Expected path: $sqlScriptPath"
+# Измененный путь к SQL скрипту - поднимаемся на уровень выше и идем в _utils
+$sqlScriptPath = Join-Path (Split-Path -Parent $PSScriptRoot) "_utils\$SQL_SCRIPT_NAME"
+if (-not (Test-Path $sqlScriptPath)) {
+    Write-Output "ERROR: SQL script '$SQL_SCRIPT_NAME' not found in: $sqlScriptPath"
     exit 1
 }
 Write-Output "Script found at: $sqlScriptPath"
