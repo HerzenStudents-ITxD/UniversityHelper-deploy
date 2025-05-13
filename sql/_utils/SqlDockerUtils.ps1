@@ -12,19 +12,42 @@ function Get-EnvVariables {
         [string]$PSScriptRoot
     )
     
+    Write-Host "Entering Get-EnvVariables with PSScriptRoot: $PSScriptRoot"
     $envFile = Join-Path (Split-Path -Parent $PSScriptRoot) ".env"
+    Write-Host "Computed env file path: $envFile"
+    
+    # Проверка существования файла
+    Write-Host "Checking if .env file exists..."
     if (-not (Test-Path $envFile)) {
-        Write-Output "ERROR: .env file not found at $envFile"
-        exit 1
+        Write-Error "ERROR: .env file not found at $envFile"
+        return $null
+    }
+    Write-Host ".env file found"
+
+    # Парсинг файла
+    Write-Host "Parsing .env file..."
+    $envVars = @{}
+    $lines = Get-Content $envFile
+    Write-Host "Total lines in .env file: $($lines.Count)"
+    foreach ($line in $lines) {
+        # Write-Host "Processing line: '$line'"
+        if ($line -match '^\s*([^#]\w+)\s*=\s*(.*)\s*$') {
+            $key = $matches[1].Trim()
+            $value = $matches[2].Trim()
+            $envVars[$key] = $value
+            # Write-Host "Loaded variable: $key=$value"
+        }
+        # else {
+        #     Write-Host "Line skipped (does not match pattern): '$line'"
+        # }
     }
 
-    Write-Output "Loading environment variables from $envFile"
-    $envVars = @{}
-    Get-Content $envFile | ForEach-Object {
-        if ($_ -match '^\s*([^#]\w+)\s*=\s*(.*)\s*$') {
-            $envVars[$matches[1]] = $matches[2]
-        }
+    if ($envVars.Count -eq 0) {
+        Write-Error "No valid environment variables loaded from $envFile"
+        return $null
     }
+
+    # Write-Host "Environment variables loaded: $($envVars.Keys -join ', ')"
     return $envVars
 }
 
@@ -41,26 +64,26 @@ function Invoke-SqlScript {
     )
     
     try {
-        Write-Output "Copying script to Docker container..."
+        Write-Host "Copying script to Docker container..."
         docker cp $ScriptPath "${Container}:/tmp/script.sql"
         
-        Write-Output "Executing SQL script on database '$Database'..."
+        Write-Host "Executing SQL script on database '$Database'..."
         $result = docker exec $Container /opt/mssql-tools/bin/sqlcmd `
             -S localhost -U SA -P $Password -d $Database `
             -i "/tmp/script.sql" -W -w 1024 -s "|" 2>&1
         
-        docker exec $Container rm -f "/tmp/script.sql" | Out-Null
-        
         if ($LASTEXITCODE -ne 0) {
-            Write-Output "SQL Error (Code $LASTEXITCODE)"
-            Write-Output $result
+            Write-Error "SQL Error (Code $LASTEXITCODE): $result"
             return $false
         }
         return $result
     }
     catch {
-        Write-Output "Failed to execute SQL script: $_"
+        Write-Error "Failed to execute SQL script: $_"
         return $false
+    }
+    finally {
+        docker exec $Container rm -f "/tmp/script.sql" | Out-Null
     }
 }
 
@@ -74,20 +97,20 @@ function Test-SqlServerAvailability {
         [string]$Password
     )
     
-    Write-Output "Checking SQL Server availability in container '$Container'..."
+    Write-Host "Checking SQL Server availability in container '$Container'..."
     $serverCheck = docker exec $Container /opt/mssql-tools/bin/sqlcmd `
         -S localhost -U SA -P $Password -d "master" `
-        -Q "SELECT @@VERSION AS 'SQL Server Version'" -W
+        -Q "SELECT @@VERSION AS 'SQL Server Version'" -W 2>&1
 
     if (-not $serverCheck -or $LASTEXITCODE -ne 0) {
-        Write-Output "SQL Server is not responding in container '$Container'"
-        Write-Output "Check if container is running: docker ps -a"
+        Write-Error "SQL Server is not responding in container '$Container': $serverCheck"
+        Write-Host "Check if container is running: docker ps -a"
         return $false
     }
     
-    Write-Output "SQL Server version:"
-    Write-Output $serverCheck
-    Write-Output "SQL Server is available and responding"
+    Write-Host "SQL Server version:"
+    Write-Host $serverCheck
+    Write-Host "SQL Server is available and responding"
     return $true
 }
 
@@ -101,15 +124,13 @@ function Test-SqlScriptExists {
         [string]$ScriptName
     )
     
-    Write-Output "Locating SQL script '$ScriptName'..."
+    Write-Host "Locating SQL script '$ScriptName'..."
     $sqlScriptPath = Join-Path $PSScriptRoot $ScriptName
     if (-not (Test-Path $sqlScriptPath)) {
-        Write-Output "SQL script '$ScriptName' not found in: $PSScriptRoot"
-        Write-Output "Expected path: $sqlScriptPath"
+        Write-Error "SQL script '$ScriptName' not found in: $PSScriptRoot"
+        Write-Host "Expected path: $sqlScriptPath"
         return $false
     }
-    Write-Output "Script found at: $sqlScriptPath"
+    Write-Host "Script found at: $sqlScriptPath"
     return $sqlScriptPath
 }
-
-Export-ModuleMember -Function *
