@@ -24,48 +24,62 @@ DECLARE @StudentAgentId UNIQUEIDENTIFIER = 'EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE
 DECLARE @ScienceAgentId UNIQUEIDENTIFIER = 'FFFFFFFF-FFFF-FFFF-FFFF-FFFFFFFFFFFF';
 DECLARE @SportsAgentId UNIQUEIDENTIFIER = '00000000-0000-0000-0000-000000000000';
 
+-- Point IDs (for News)
+DECLARE @Point1Id UNIQUEIDENTIFIER = '11110000-1111-1111-1111-111111111111';
+DECLARE @Point2Id UNIQUEIDENTIFIER = '22220000-2222-2222-2222-222222222222';
+DECLARE @Point3Id UNIQUEIDENTIFIER = '33330000-3333-3333-3333-333333333333';
+DECLARE @Point4Id UNIQUEIDENTIFIER = '44440000-4444-4444-4444-444444444444';
+
 -- Create communities
-INSERT INTO Communities (Id, Name, Avatar, CreatedBy, CreatedAtUtc, ModifiedBy, ModifiedAtUtc)
+INSERT INTO Communities (Id, Name, Avatar, Text, CreatedBy, CreatedAtUtc, ModifiedBy, ModifiedAtUtc, IsHidden)
 VALUES 
 -- Admin community
 (
     @AdminCommunityId,
     'University Administration',
     'data:image/gif;base64,R0lGODlhBwAKAMIEAICAgJmZmbOzs/f39////////////////yH5BAEKAAcALAAAAAAHAAoAAAMWSDPUGoE5AaIj1M4qMW+ZFDYD1ClnAgA7',
+    'Official community for university administration',
     @AdminUserId,
     @Now,
     @AdminUserId,
-    @Now
+    @Now,
+    0
 ),
 -- Student council
 (
     @StudentCouncilId,
     'Student Council',
     'data:image/gif;base64,R0lGODlhBwAKAMIEAICAgJmZmbOzs/f39////////////////yH5BAEKAAcALAAAAAAHAAoAAAMWSDPUGoE5AaIj1M4qMW+ZFDYD1ClnAgA7',
+    'Student government and activities',
     @StudentUserId,
     @Now,
     @StudentUserId,
-    @Now
+    @Now,
+    0
 ),
 -- Science club
 (
     @ScienceClubId,
     'Science Club',
     'data:image/gif;base64,R0lGODlhBwAKAMIEAICAgJmZmbOzs/f39////////////////yH5BAEKAAcALAAAAAAHAAoAAAMWSDPUGoE5AaIj1M4qMW+ZFDYD1ClnAgA7',
+    'Science research and events',
     @TeacherUserId,
     @Now,
     @TeacherUserId,
-    @Now
+    @Now,
+    0
 ),
 -- Sports club
 (
     @SportsClubId,
     'Sports Club',
     'data:image/gif;base64,R0lGODlhBwAKAMIEAICAgJmZmbOzs/f39////////////////yH5BAEKAAcALAAAAAAHAAoAAAMWSDPUGoE5AaIj1M4qMW+ZFDYD1ClnAgA7',
+    'University sports teams and events',
     @StudentUserId,
     @Now,
     @StudentUserId,
-    @Now
+    @Now,
+    0
 );
 
 -- Add community agents
@@ -93,7 +107,7 @@ VALUES
 (NEWID(), @TeacherUserId, @SportsClubId);
 
 -- Create news for each community
-INSERT INTO News (Id, Date, Title, Text, AuthorId, CommunityId)
+INSERT INTO News (Id, Date, Title, Text, AuthorId, PointId, CommunityId, CreatedBy, CreatedAtUtc, ModifiedBy, ModifiedAtUtc)
 VALUES
 -- Admin community news
 (
@@ -102,7 +116,12 @@ VALUES
     'Welcome to University Helper',
     'Welcome to our new platform! This is the official announcement from the university administration. We are excited to introduce new features for better communication and organization.',
     @AdminUserId,
-    @AdminCommunityId
+    @Point1Id,
+    @AdminCommunityId,
+    @AdminUserId,
+    @Now,
+    @AdminUserId,
+    @Now
 ),
 -- Student council news
 (
@@ -111,7 +130,12 @@ VALUES
     'Student Council Elections',
     'Annual student council elections will be held next week. All students are encouraged to participate and vote for their representatives.',
     @StudentUserId,
-    @StudentCouncilId
+    @Point2Id,
+    @StudentCouncilId,
+    @StudentUserId,
+    DATEADD(DAY, -2, @Now),
+    @StudentUserId,
+    DATEADD(DAY, -2, @Now)
 ),
 -- Science club news
 (
@@ -120,7 +144,12 @@ VALUES
     'Annual Science Conference',
     'The Science Club is organizing its annual conference next month. Submit your research proposals by the end of this week.',
     @TeacherUserId,
-    @ScienceClubId
+    @Point3Id,
+    @ScienceClubId,
+    @TeacherUserId,
+    DATEADD(DAY, -5, @Now),
+    @TeacherUserId,
+    DATEADD(DAY, -5, @Now)
 ),
 -- Sports club news
 (
@@ -129,7 +158,12 @@ VALUES
     'Basketball Tournament',
     'Inter-department basketball tournament starts next Monday. Register your teams by Friday!',
     @StudentUserId,
-    @SportsClubId
+    @Point4Id,
+    @SportsClubId,
+    @StudentUserId,
+    DATEADD(DAY, -1, @Now),
+    @StudentUserId,
+    DATEADD(DAY, -1, @Now)
 );
 
 -- Add news photos
