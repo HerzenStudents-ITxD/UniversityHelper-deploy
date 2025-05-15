@@ -1,4 +1,4 @@
-USE UserDB;
+﻿USE UserDB;
 DECLARE @Now DATETIME2 = GETUTCDATE();
 INSERT INTO UsersCredentials (Id, UserId, Login, PasswordHash, Salt, IsActive, CreatedAtUtc)
 VALUES (
