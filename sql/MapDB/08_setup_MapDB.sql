@@ -18,6 +18,10 @@ DECLARE @ComputerLabId UNIQUEIDENTIFIER = 'AAAAAAAA-AAAA-AAAA-AAAA-AAAAAAAAAAAA'
 DECLARE @ParkingLotId UNIQUEIDENTIFIER = 'BBBBBBBB-BBBB-BBBB-BBBB-BBBBBBBBBBBB';
 DECLARE @SportsHallId UNIQUEIDENTIFIER = 'CCCCCCCC-CCCC-CCCC-CCCC-CCCCCCCCCCCC';
 
+-- Main icon points
+DECLARE @MainEntranceIcon UNIQUEIDENTIFIER = '/9j/4AAQSkZJRgABAQEAeAB4AAD/2wBDAAIBAQIBAQICAgICAgICAwUDAwMDAwYEBAMFBwYHBwcGBwcICQsJCAgKCAcHCg0KCgsMDAwMBwkODw0MDgsMDAz/2wBDAQICAgMDAwYDAwYMCAcIDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAz/wAARCAAIAAYDASIAAhEBAxEB/8QAHwAAAQUBAQEBAQEAAAAAAAAAAAECAwQFBgcICQoL/8QAtRAAAgEDAwIEAwUFBAQAAAF9AQIDAAQRBRIhMUEGE1FhByJxFDKBkaEII0KxwRVS0fAkM2JyggkKFhcYGRolJicoKSo0NTY3ODk6Q0RFRkdISUpTVFVWV1hZWmNkZWZnaGlqc3R1dnd4eXqDhIWGh4iJipKTlJWWl5iZmqKjpKWmp6ipqrKztLW2t7i5usLDxMXGx8jJytLT1NXW19jZ2uHi4+Tl5ufo6erx8vP09fb3+Pn6/8QAHwEAAwEBAQEBAQEBAQAAAAAAAAECAwQFBgcICQoL/8QAtREAAgECBAQDBAcFBAQAAQJ3AAECAxEEBSExBhJBUQdhcRMiMoEIFEKRobHBCSMzUvAVYnLRChYkNOEl8RcYGRomJygpKjU2Nzg5OkNERUZHSElKU1RVVldYWVpjZGVmZ2hpanN0dXZ3eHl6goOEhYaHiImKkpOUlZaXmJmaoqOkpaanqKmqsrO0tba3uLm6wsPExcbHyMnK0tPU1dbX2Nna4uPk5ebn6Onq8vP09fb3+Pn6/9oADAMBAAIRAxEAPwD9/KKKKAP/2Q==';
+
+
 -- Label IDs
 DECLARE @PublicAreaLabelId UNIQUEIDENTIFIER = 'DDDDDDDD-DDDD-DDDD-DDDD-DDDDDDDDDDDD';
 DECLARE @StudyAreaLabelId UNIQUEIDENTIFIER = 'EEEEEEEE-EEEE-EEEE-EEEE-EEEEEEEEEEEE';
@@ -228,7 +232,7 @@ VALUES
     @MainEntranceId,
     '{"ru": "Главный вход", "en": "Main Entrance", "cn": "主入口"}',
     10.0, 5.0, 0.0,
-    'main-entrance-icon',
+    @MainEntranceIcon,
     @AdminUserId,
     @Now,
     1,
@@ -240,7 +244,7 @@ VALUES
     @ReceptionId,
     '{"ru": "Ресепшен", "en": "Reception", "cn": "接待处"}',
     15.0, 5.0, 0.0,
-    'reception-icon',
+    @MainEntranceIcon,
     @AdminUserId,
     @Now,
     1,
@@ -252,7 +256,7 @@ VALUES
     @LibraryId,
     '{"ru": "Главная библиотека", "en": "Main Library", "cn": "主图书馆"}',
     25.0, 30.0, 3.0,
-    'library-icon',
+    @MainEntranceIcon,
     @AdminUserId,
     @Now,
     1,
@@ -264,7 +268,7 @@ VALUES
     @CafeteriaId,
     '{"ru": "Кафетерий", "en": "Cafeteria", "cn": "自助餐厅"}',
     40.0, 10.0, 0.0,
-    'cafeteria-icon',
+    NULL,
     @AdminUserId,
     @Now,
     1,
@@ -276,7 +280,7 @@ VALUES
     @Auditorium1Id,
     '{"ru": "Аудитория 101", "en": "Auditorium 101", "cn": "101礼堂"}',
     50.0, 20.0, 3.0,
-    'auditorium-icon',
+    @MainEntranceIcon,
     @ModeratorUserId,
     @Now,
     1,
@@ -288,7 +292,7 @@ VALUES
     @Auditorium2Id,
     '{"ru": "Аудитория 201", "en": "Auditorium 201", "cn": "201礼堂"}',
     50.0, 20.0, 6.0,
-    'auditorium-icon',
+    @MainEntranceIcon,
     @ModeratorUserId,
     @Now,
     1,
@@ -300,7 +304,7 @@ VALUES
     @DeanOfficeId,
     '{"ru": "Офис декана", "en": "Dean Office", "cn": "院长办公室"}',
     60.0, 40.0, 6.0,
-    'office-icon',
+    @MainEntranceIcon,
     @AdminUserId,
     @Now,
     1,
@@ -312,7 +316,7 @@ VALUES
     @ComputerLabId,
     '{"ru": "Компьютерный класс", "en": "Computer Lab", "cn": "计算机实验室"}',
     40.0, 50.0, 3.0,
-    'computer-icon',
+    @MainEntranceIcon,
     @ModeratorUserId,
     @Now,
     1,
@@ -324,7 +328,7 @@ VALUES
     @ParkingLotId,
     '{"ru": "Парковка", "en": "Parking Lot", "cn": "停车场"}',
     5.0, 80.0, 0.0,
-    'parking-icon',
+    @MainEntranceIcon,
     @AdminUserId,
     @Now,
     1,
@@ -336,7 +340,7 @@ VALUES
     @SportsHallId,
     '{"ru": "Спортивный зал", "en": "Sports Hall", "cn": "体育馆"}',
     70.0, 70.0, 0.0,
-    'sports-icon',
+    NULL,
     @AdminUserId,
     @Now,
     1,
