@@ -277,7 +277,7 @@ services:
       context: ./nginx
       dockerfile: Dockerfile
     ports:
-      - 80:80
+      - 88:88
       - 81:81
       - 82:82
       - 83:83
